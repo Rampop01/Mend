@@ -22,11 +22,13 @@ CURRENCY_RATES_TO_USD: Dict[str, float] = {
     "KES": 0.0078,
 }
 
-# Unpatched state: NGN and KES missing from DECIMAL_EXPONENTS
+# Patched by @mend-forge: Added NGN and KES minor-unit exponents + safe fallback
 DECIMAL_EXPONENTS: Dict[str, int] = {
     "USD": 2,
     "EUR": 2,
     "GBP": 2,
+    "NGN": 2,
+    "KES": 2,
 }
 
 
@@ -77,12 +79,16 @@ def calculate_effective_fee_bps(gross_cents: int, discount_cents: int, fixed_fee
     """
     Calculates net settlement amount, platform fee in cents, and effective fee in basis points (bps).
     """
-    net_cents = gross_cents - discount_cents
-    variable_fee_cents = round(net_cents * 0.029)
-    platform_fee_cents = variable_fee_cents + fixed_fee_cents if net_cents > 0 else 0
+    net_cents = max(0, gross_cents - discount_cents)
+    if net_cents == 0:
+        return {
+            "net_cents": 0,
+            "platform_fee_cents": 0,
+            "effective_fee_bps": 0.0,
+        }
 
-    # Unpatched production bug: When a 100% promotional voucher or credit offset makes
-    # net_cents == 0, dividing by net_cents raises ZeroDivisionError in production!
+    variable_fee_cents = round(net_cents * 0.029)
+    platform_fee_cents = variable_fee_cents + fixed_fee_cents
     effective_fee_bps = round((platform_fee_cents / net_cents) * 10000, 2)
 
     return {
@@ -96,7 +102,7 @@ def normalize_currency_amount(net_cents: int, currency: str) -> float:
     """
     Converts minor-unit settlement integer into USD equivalent using currency exponent.
     """
-    exponent = DECIMAL_EXPONENTS[currency]
+    exponent = DECIMAL_EXPONENTS.get(currency, 2)
     major_units = net_cents / (10 ** exponent)
     rate = CURRENCY_RATES_TO_USD.get(currency, 1.0)
     return round(major_units * rate, 2)
