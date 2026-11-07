@@ -1,107 +1,167 @@
-# Mend — Autonomous Multi-Agent Incident Forensics & Live Hotfix Room on Switch AI + Telegram
+# Mend
 
-> **Built for the Flip the Switch Hackathon (WeMakeDevs × DevTools Academy × Switch AI)**  
-> **Tracks**: 🏆 **Best Business Workflow ($2,000)** + 🎙️ **Code with Wispr Voice Integration ($500)**  
-> 🎬 **Demo Video Walkthrough**: [https://www.loom.com/share/2f8163a7cc5c4f3ea2e3913a704dac23](https://www.loom.com/share/2f8163a7cc5c4f3ea2e3913a704dac23)
+**Autonomous Multi-Agent Incident Forensics & Live Hotfix Room on Switch AI + Telegram**
 
----
-
-## 🚀 Overview
-
-When a production payment or checkout service throws an unhandled `500 Internal Server Error`, engineering teams waste critical minutes jumping between error trackers, terminal editors, CI test runners, and chat threads.
-
-**Mend** turns a single **Switch AI Room (`room://mend-prod-incidents`)** bridged 1:1 with **Telegram (`@mend_switch_bot`)** and the **Mend Switch Command Console** into an autonomous, human-in-the-loop incident war-room where **three specialized AI agents collaborate alongside human engineers** on real production code:
-
-1. **`@mend-recon` (Incident Forensics & AST Inspector)**
-   - Intercepts real runtime exceptions (`ZeroDivisionError`, `KeyError`, etc.) thrown by the live SQLite-backed financial checkout service ([`services/checkout_engine.py`](./services/checkout_engine.py)).
-   - Parses the live Python Abstract Syntax Tree (`ast`) and stack frames on disk to pinpoint the exact failing function, line number, AST statement node, and payload context.
-   - Posts a structured forensics report to the shared Switch Room and Telegram thread, then hands off to `@mend-forge`.
-
-2. **`@mend-forge` (Surgical Patch & Unittest Verification Agent)**
-   - Synthesizes a minimal unified git diff (`difflib.unified_diff`) fixing the root cause.
-   - Executes the real Python `unittest` regression suite ([`tests/test_checkout_engine.py`](./tests/test_checkout_engine.py)) in an isolated sandbox before and after applying the candidate patch (`0/4 failed` → `4/4 passed`).
-   - Streams the unified diff and test runner results into the room and hands off to `@mend-guard`.
-
-3. **`@mend-guard` (Switch Trust Guardrail & Zero-Downtime Hotfix Deployer)**
-   - Audits the candidate patch through deterministic **Switch Trust Guardrails** ([`switch_room/guardrails.py`](./switch_room/guardrails.py)): Python AST syntax integrity, forbidden dynamic call gate (`eval`/`exec`/`os.system`), credential/secret DLP regex scan, and surgical blast-radius verification (`<= 45 LOC`).
-   - Sends an interactive **Telegram Inline Approval Card** (`[✅ Approve & Hot-Reload Fix]` / `[⏪ Reject / Rollback]`) to the on-call engineer.
-   - Once approved (via Telegram button tap, replying `ship it` in chat, or using **Wispr Flow Voice Commands**), `@mend-guard` patches `services/checkout_engine.py` on disk, hot-reloads the live Python module in `0ms` downtime, runs the live test suite, and replays the failed transaction against SQLite (`HTTP 200 OK`).
+[![Hackathon](https://img.shields.io/badge/Flip%20the%20Switch-WeMakeDevs%20%C3%97%20DevTools%20Academy-black?style=flat-square)](https://www.wemakedevs.org/hackathons/switch)
+[![Track](https://img.shields.io/badge/Track-Best%20Business%20Workflow-black?style=flat-square)](https://www.wemakedevs.org/hackathons/switch)
+[![Switch Protocol](https://img.shields.io/badge/Switch%20AI-Room%20Protocol-black?style=flat-square)](https://github.com/sandbox-quantum/switch)
+[![Telegram](https://img.shields.io/badge/Telegram-@mend__switch__bot-blue?style=flat-square)](https://t.me/mend_switch_bot)
+[![Video Demo](https://img.shields.io/badge/Loom-Walkthrough%20Video-orange?style=flat-square)](https://www.loom.com/share/2f8163a7cc5c4f3ea2e3913a704dac23)
 
 ---
 
-## 🏗️ Architecture
+## 📺 Live Video Walkthrough
 
-```mermaid
-flowchart LR
-    subgraph Prod["Live Production Service (SQLite + HTTP)"]
-        API["POST /api/checkout/settle\n(services/checkout_engine.py)"]
-        DB[("production_ledger.db")]
-        API --> DB
-    end
+**Watch the full 2-minute live demo on Loom:**  
+👉 **[https://www.loom.com/share/2f8163a7cc5c4f3ea2e3913a704dac23](https://www.loom.com/share/2f8163a7cc5c4f3ea2e3913a704dac23)**
 
-    subgraph SwitchRoom["Switch AI Shared Room (room://mend-prod-incidents)"]
-        Recon["@mend-recon\nAST & Traceback Forensics"]
-        Forge["@mend-forge\nUnified Diff & Unittest Runner"]
-        Guard["@mend-guard\nSwitch Trust Guardrails (99.4%)"]
-        Recon -->|AST Context| Forge
-        Forge -->|Candidate Diff + 4/4 Tests| Guard
-    end
+---
 
-    subgraph Human["Human Teammates & Interfaces"]
-        TG["Telegram (@mend_switch_bot)\nInline Approval Buttons & Chat"]
-        Voice["Wispr Flow / Voice Commands\n('trigger bug', 'ship it')"]
-        Web["Mend Switch Web Console\n(Live Split-Screen Telemetry)"]
-    end
+## What is Mend?
 
-    API -->|Unhandled 500 Exception| Recon
-    Guard <-->|Two-Way Bridge| TG
-    Guard <-->|Real-Time Sync| Web
-    Voice --> Web
-    Guard -->|Hot-Reload & Replay TX (200 OK)| API
+When a production API or website crashes in the middle of the night, engineering teams face a painful reality:
+1. Monitoring tools (like Sentry or Datadog) only **alert** you that something broke—they cannot fix it.
+2. AI coding assistants (like Claude Code or Cursor) are trapped inside an engineer's **laptop terminal**. If you are away from your computer, in bed, or in transit, they are useless.
+3. Every minute of downtime costs revenue, user trust, and team sanity.
+
+**Mend** bridges this gap using the **Switch AI Room Protocol**. 
+
+Instead of isolating AI agents on a developer's machine, Mend deploys **three specialized AI teammates into a shared Telegram room (`@mend_switch_bot`)**. When a runtime crash occurs in production, the agents isolate the bug, write the code fix, test it, and present the on-call engineer with a one-tap approval button right on their phone.
+
+---
+
+## How It Works: The Multi-Agent Pipeline
+
+```
+  [ Production Service Crashes ]
+                 │
+                 ▼ (Unhandled HTTP 500)
+    ┌───────────────────────────┐
+    │  @mend-recon              │  Parses stack frames & Python Abstract Syntax
+    │  (Forensics & AST Agent)  │  Tree (AST) on disk to locate the exact crashing line.
+    └────────────┬──────────────┘
+                 │
+                 ▼ (Hands off root-cause context)
+    ┌───────────────────────────┐
+    │  @mend-forge              │  Synthesizes a minimal unified git diff and executes
+    │  (Patch & Test Agent)     │  the full unittest suite (proving 4/4 passing tests).
+    └────────────┬──────────────┘
+                 │
+                 ▼ (Hands off candidate diff)
+    ┌───────────────────────────┐
+    │  @mend-guard              │  Runs Switch Trust security guardrails (syntax checks,
+    │  (Safety & Deploy Agent)  │  no dynamic code execution, DLP token scans, blast radius).
+    └────────────┬──────────────┘
+                 │
+                 ▼ (Presents inline approval card on mobile)
+    ┌───────────────────────────┐
+    │  Human Operator           │  Reviews diff on Telegram and taps:
+    │  (Telegram Mobile / Web)  │  [ Approve & Deploy Hotfix ]
+    └────────────┬──────────────┘
+                 │
+                 ▼
+  [ Zero-Downtime Hot-Reload & Failed Request Replay -> HTTP 200 OK ]
 ```
 
 ---
 
-## ✨ Key Features (100% Real Execution — Zero Dummy Data)
+## The Three Switch Agents
 
-- **Real SQLite Financial Settlement Engine**: Processes multi-currency (`USD`, `EUR`, `GBP`, `NGN`, `KES`) settlements in [`services/checkout_engine.py`](./services/checkout_engine.py) and persists atomic ledger rows to `data/production_ledger.db`.
-- **Real Reproducible Production Bugs**:
-  1. **100% Promotional Voucher Bug (`ZeroDivisionError`)**: When `gross_cents == discount_cents`, `net_cents` becomes `0`, crashing `calculate_effective_fee_bps()` at line 105.
-  2. **African FX Exponent Bug (`KeyError: 'NGN'`)**: When settling Nigerian Naira (`NGN`) or Kenyan Shilling (`KES`) orders, `DECIMAL_EXPONENTS[currency]` throws an unhandled `KeyError`.
-- **Real Python `ast`, `difflib`, and `unittest` Execution**: `@mend-recon` and `@mend-forge` inspect actual AST nodes on disk and execute `python3 -m unittest discover -s tests -v` via `subprocess`.
-- **Real Two-Way Telegram Bot Integration (`@mend_switch_bot`)**: Uses a single Telegram Bot token to bridge all 3 Switch Room agents (`@mend-recon`, `@mend-forge`, `@mend-guard`) with interactive inline keyboard approval buttons.
-- **Voice-First Incident Response (Code with Wispr)**: Built-in voice command integration allowing engineers to trigger diagnostics, run tests, and ship hotfixes hands-free by voice.
+| Agent | Role | Responsibility |
+| :--- | :--- | :--- |
+| **`@mend-recon`** | Forensics & AST Inspector | Intercepts unhandled exceptions (`ZeroDivisionError`, `KeyError`, etc.), inspects the live Python AST and stack frames on disk, and extracts the exact failing line and request payload. |
+| **`@mend-forge`** | Surgical Patch & Test Runner | Generates the minimal git diff fixing the root cause, and runs `python3 -m unittest discover -s tests -v` in an isolated sandbox before and after patching (`0/4` → `4/4` passing). |
+| **`@mend-guard`** | Switch Trust & Deployment Gate | Audits candidate code against Switch Trust security guardrails (clean syntax, 0 forbidden dynamic execution calls like `eval`/`os.system`, no leaked secrets, blast radius <= 45 LOC), and gates hot-reloads behind explicit human approval in Telegram. |
 
 ---
 
-## ⚡ Quickstart
+## Key Features
 
-### 1. Clone & Configure Environment
+- **Real Execution (Zero Mock Data)**: Every action in Mend operates on real code, real Python AST parsing, real `difflib` unified diffs, real `unittest` runs, and a real SQLite database.
+- **Two-Way Synchronization**: Messages sent in Telegram appear instantly on the web developer console, and console commands stream back to Telegram.
+- **Switch Template Compatibility**: Includes official Switch v1 YAML templates (`templates/mend-incident-warroom.template.yaml` and `templates/mend-hotfix-workroom.template.yaml`) ready to import directly into the **Switch Console** desktop application.
+- **Voice-Enabled (Code with Wispr)**: Supports voice commands (`"trigger bug"`, `"run tests"`, `"ship it"`) via microphone or Wispr Flow.
+
+---
+
+## Project Structure
+
+```
+mend/
+├── server.py                        # Threaded HTTP backend + Telegram Bot API polling daemon
+├── services/
+│   └── checkout_engine.py           # Target production microservice backed by SQLite
+├── switch_room/
+│   ├── orchestrator.py              # Mend multi-agent orchestrator & room state manager
+│   └── guardrails.py                # Switch Trust AST & DLP security audit engine
+├── tests/
+│   └── test_checkout_engine.py      # Real unittest regression suite (4 tests)
+├── templates/
+│   ├── mend-incident-warroom.template.yaml  # Official Switch Console room template
+│   └── mend-hotfix-workroom.template.yaml  # Official Switch Console hotfix template
+├── web/
+│   └── index.html                   # High-contrast monochrome developer command center
+├── data/                            # Persistent SQLite storage (production ledger + room messages)
+└── scripts/
+    ├── render_demo_video.py         # Automated walkthrough and screenshot pipeline
+    └── encode_mp4.m                 # Native macOS AVFoundation 1080p MP4 encoder
+```
+
+---
+
+## Quickstart (Run it Locally in 60 Seconds)
+
+### 1. Prerequisites
+- macOS or Linux with **Python 3.9+**
+- (Optional) A Telegram Bot Token from [@BotFather](https://t.me/BotFather)
+
+### 2. Clone & Setup
 ```bash
+git clone https://github.com/<your-username>/mend.git
 cd mend
-# Add your Telegram Bot Token from @BotFather to .env
-printf "Enter TELEGRAM_BOT_TOKEN (typing hidden): " && read -s val && echo && echo "TELEGRAM_BOT_TOKEN=$val" >> .env && echo "Saved."
+
+# Copy environment template
+cp .env.example .env
+
+# Add your Telegram Bot Token to .env
+# (If omitted, Mend runs in local web console mode)
+echo "TELEGRAM_BOT_TOKEN=your_token_here" >> .env
 ```
 
-### 2. Run the Test Suite Directly
+### 3. Run Unit Tests
 ```bash
 python3 -m unittest discover -s tests -v
 ```
 
-### 3. Launch the Mend Switch Room & Production Server
+### 4. Start the Mend Server
 ```bash
 python3 server.py
 ```
-Open **[http://127.0.0.1:8765](http://127.0.0.1:8765)** in your browser and open **`@mend_switch_bot`** in Telegram!
+Open **`http://127.0.0.1:8765`** in your browser and open **`@mend_switch_bot`** on Telegram!
 
 ---
 
-## 💬 Room Commands (Telegram & Switch Console)
+## How to Test the Demo Flow
 
-| Command | Agent Triggered | Action |
-| :--- | :--- | :--- |
-| `trigger bug` | `@mend-recon` → `@mend-forge` → `@mend-guard` | Fires a live 100% promo voucher checkout (`$250.00`), catches the `500 ZeroDivisionError`, runs AST forensics, synthesizes the diff, runs `unittest`, and posts approval buttons to Telegram. |
-| `run tests` | `@mend-forge` | Executes `python3 -m unittest discover -s tests -v` and posts live results to the room. |
-| `ship it` / `approve` | `@mend-guard` | Applies the audited patch to `services/checkout_engine.py`, hot-reloads the module with zero downtime, and replays the failed transaction (`200 OK`). |
-| `reset` | `switch-core` | Resets `services/checkout_engine.py` back to the unpatched baseline for repeatable live demos. |
+1. Open **`http://127.0.0.1:8765`** and open your Telegram chat with the bot.
+2. Click **`SETTLE STANDARD ORDER`** on the web dashboard (or send `hello` in Telegram). You will see a normal transaction settle with `HTTP 200 OK`.
+3. Click **`EXECUTE 100% PROMO VOUCHER`** (or send `trigger bug` in Telegram).
+   - The checkout engine will encounter a real `ZeroDivisionError: division by zero` at line 105.
+   - Within 2 seconds, `@mend-recon`, `@mend-forge`, and `@mend-guard` will diagnose the crash, run all tests, and send an approval card to Telegram.
+4. On Telegram, tap **`[Approve & Deploy Hotfix]`** (or reply `ship it`).
+   - The file `services/checkout_engine.py` will be patched on disk.
+   - The module will hot-reload with zero downtime.
+   - The failed voucher transaction will replay and settle with `HTTP 200 OK`.
 
+---
+
+## Built For
+
+- **Flip the Switch Hackathon** hosted by **WeMakeDevs** & **DevTools Academy**, powered by **Switch AI**.
+- **Tracks**: Best Business Workflow ($2,000) & Code with Wispr ($500).
+
+---
+
+## License
+
+Apache 2.0. Built with pride by Popoola Rahmat.
