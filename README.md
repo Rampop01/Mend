@@ -1,7 +1,8 @@
 # Mend — Autonomous Multi-Agent Incident Forensics & Live Hotfix Room on Switch AI + Telegram
 
 > **Built for the Flip the Switch Hackathon (WeMakeDevs × DevTools Academy × Switch AI)**  
-> **Tracks**: 🏆 **Best Business Workflow ($2,000)** + 🎙️ **Code with Wispr Voice Integration ($500)**
+> **Tracks**: 🏆 **Best Business Workflow ($2,000)** + 🎙️ **Code with Wispr Voice Integration ($500)**  
+> 🎬 **Demo Video Walkthrough**: [https://www.loom.com/share/2f8163a7cc5c4f3ea2e3913a704dac23](https://www.loom.com/share/2f8163a7cc5c4f3ea2e3913a704dac23)
 
 ---
 
