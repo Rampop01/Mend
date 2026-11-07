@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mend — Switch AI Multi-Agent Incident & Hotfix Room</title>
+  <style>
+    :root {
+      --bg-primary: #090d16;
+      --bg-panel: #111827;
+      --bg-card: #172033;
+      --bg-elevated: #1e293b;
+      --border-subtle: #26334d;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent-blue: #38bdf8;
+      --accent-indigo: #6366f1;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --accent-purple: #a855f7;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      line-height: 1.5;
+      min-block-size: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Header Bar */
+    header.topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1.5rem;
+      background: rgba(17, 24, 39, 0.92);
+      border-block-end: 1px solid var(--border-subtle);
+      backdrop-filter: blur(8px);
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand-logo {
+      inline-size: 2.25rem;
+      block-size: 2.25rem;
+      border-radius: 0.6rem;
+      background: linear-gradient(135deg, var(--accent-indigo), var(--accent-blue));
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 1.1rem;
+      color: #fff;
+      box-shadow: 0 0 18px rgba(99, 102, 241, 0.45);
+    }
+
+    .brand-title {
+      font-weight: 700;
+      font-size: 1.15rem;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .brand-sub {
+      font-size: 0.76rem;
+      color: var(--text-secondary);
+    }
+
+    .status-pills {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+    }
+
+    .dot {
+      inline-size: 0.5rem;
+      block-size: 0.5rem;
+      border-radius: 50%;
+      background: var(--accent-emerald);
+      box-shadow: 0 0 8px var(--accent-emerald);
+    }
+
+    .dot.warn {
+      background: var(--accent-amber);
+      box-shadow: 0 0 8px var(--accent-amber);
+    }
+
+    .dot.danger {
+      background: var(--accent-rose);
+      box-shadow: 0 0 8px var(--accent-rose);
+    }
+
+    /* Main Split Grid */
+    main.workspace {
+      display: grid;
+      grid-template-columns: 1.08fr 1.12fr;
+      gap: 1rem;
+      padding: 1rem 1.5rem;
+      flex: 1;
+      max-inline-size: 1680px;
+      inline-size: 100%;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 1100px) {
+      main.workspace {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 0.85rem 1.15rem;
+      border-block-end: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(23, 32, 51, 0.6);
+      gap: 0.5rem;
+    }
+
+    .panel-title {
+      font-size: 0.92rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .agent-roster {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .agent-tag {
+      font-size: 0.7rem;
+      font-family: var(--font-mono);
+      padding: 0.2rem 0.5rem;
+      border-radius: 0.35rem;
+      background: rgba(56, 189, 248, 0.12);
+      color: var(--accent-blue);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    .agent-tag.forge {
+      background: rgba(168, 85, 247, 0.12);
+      color: #c084fc;
+      border-color: rgba(168, 85, 247, 0.3);
+    }
+
+    .agent-tag.guard {
+      background: rgba(16, 185, 129, 0.12);
+      color: #34d399;
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+
+    /* Switch Room Feed */
+    .room-feed {
+      padding: 1rem;
+      overflow-y: auto;
+      max-block-size: 540px;
+      min-block-size: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    .msg-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 0.75rem;
+      padding: 0.85rem 1rem;
+      border-inline-start: 4px solid var(--accent-blue);
+    }
+
+    .msg-card.agent-recon {
+      border-inline-start-color: var(--accent-rose);
+    }
+
+    .msg-card.agent-forge {
+      border-inline-start-color: var(--accent-purple);
+    }
+
+    .msg-card.agent-guard {
+      border-inline-start-color: var(--accent-emerald);
+    }
+
+    .msg-card.human {
+      border-inline-start-color: var(--accent-amber);
+      background: rgba(30, 41, 59, 0.9);
+    }
+
+    .msg-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-block-end: 0.45rem;
+      font-size: 0.76rem;
+    }
+
+    .msg-sender {
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+
+    .msg-handle {
+      font-family: var(--font-mono);
+      color: var(--accent-blue);
+      font-size: 0.72rem;
+    }
+
+    .msg-platform {
+      color: var(--text-muted);
+      font-size: 0.7rem;
+    }
+
+    .msg-body {
+      font-size: 0.84rem;
+      color: #e2e8f0;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .msg-body code, .msg-body pre {
+      font-family: var(--font-mono);
+      font-size: 0.77rem;
+    }
+
+    .msg-body pre {
+      background: #090d16;
+      border: 1px solid var(--border-subtle);
+      border-radius: 0.5rem;
+      padding: 0.65rem;
+      margin-block: 0.5rem;
+      overflow-x: auto;
+      color: #cbd5e1;
+    }
+
+    .approval-bar {
+      display: flex;
+      gap: 0.55rem;
+      margin-block-start: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    /* Room Composer + Wispr Voice Input */
+    .room-composer {
+      padding: 0.85rem 1rem;
+      border-block-start: 1px solid var(--border-subtle);
+      background: var(--bg-card);
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .room-composer input {
+      flex: 1;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+      padding: 0.6rem 0.85rem;
+      border-radius: 0.55rem;
+      font-size: 0.85rem;
+    }
+
+    /* Buttons */
+    button.btn {
+      cursor: pointer;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      padding: 0.55rem 0.9rem;
+      border-radius: 0.55rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      transition: all 0.15s ease;
+    }
+
+    button.btn:hover {
+      border-color: var(--accent-blue);
+      transform: translateY(-1px);
+    }
+
+    button.btn-primary {
+      background: linear-gradient(135deg, var(--accent-indigo), #4f46e5);
+      border-color: #6366f1;
+      color: #fff;
+    }
+
+    button.btn-danger {
+      background: rgba(244, 63, 94, 0.16);
+      border-color: rgba(244, 63, 94, 0.5);
+      color: #fda4af;
+    }
+
+    button.btn-success {
+      background: linear-gradient(135deg, #059669, #10b981);
+      border-color: #34d399;
+      color: #fff;
+    }
+
+    button.btn-amber {
+      background: rgba(245, 158, 11, 0.16);
+      border-color: rgba(245, 158, 11, 0.5);
+      color: #fcd34d;
+    }
+
+    /* Right Column Sections */
+    .ops-section {
+      padding: 1rem 1.15rem;
+      border-block-end: 1px solid var(--border-subtle);
+    }
+
+    .action-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.6rem;
+      margin-block-start: 0.65rem;
+    }
+
+    .telemetry-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.65rem;
+      margin-block-start: 0.75rem;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 0.65rem;
+      padding: 0.7rem 0.85rem;
+    }
+
+    .stat-label {
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .stat-value {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-block-start: 0.2rem;
+      font-family: var(--font-mono);
+    }
+
+    /* Responsive Table (modern-web-guidance: responsive-table) */
+    .table-wrapper {
+      overflow: auto;
+      max-inline-size: 100%;
+      max-block-size: min(290px, 50vh);
+      container-type: inline-size;
+      border: 1px solid var(--border-subtle);
+      border-radius: 0.65rem;
+      background: var(--bg-card);
+    }
+
+    table {
+      inline-size: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 0.8rem;
+      --label-1: "TX ID";
+      --label-2: "Merchant";
+      --label-3: "Currency";
+      --label-4: "Gross / Net";
+      --label-5: "Fee (bps)";
+      --label-6: "Status";
+    }
+
+    caption {
+      text-align: start;
+      padding: 0.65rem 0.9rem;
+      font-weight: 700;
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      background: var(--bg-elevated);
+      border-block-end: 1px solid var(--border-subtle);
+    }
+
+    /* Sticky column headers (desktop) */
+    thead {
+      position: sticky;
+      inset-block-start: 0;
+      z-index: 1;
+      background: var(--bg-elevated);
+    }
+
+    th, td {
+      padding: 0.55rem 0.8rem;
+      text-align: start;
+      border-block-end: 1px solid var(--border-subtle);
+      font-family: var(--font-mono);
+    }
+
+    thead th {
+      font-family: var(--font-sans);
+      font-size: 0.73rem;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      background: var(--bg-elevated);
+    }
+
+    /* Sticky row headers (desktop) */
+    tbody th {
+      position: sticky;
+      inset-inline-start: 0;
+      background: var(--bg-card);
+      color: var(--accent-blue);
+      font-weight: 600;
+    }
+
+    @container (width < 600px) {
+      table, thead, tbody, tr, th, td {
+        display: block;
+      }
+
+      thead {
+        /* MANDATORY: Hide column header from layout and screen readers. */
+        display: none;
+      }
+
+      tr {
+        margin-block-end: 1rem;
+        border: 1px solid var(--border-subtle);
+      }
+
+      tbody th {
+        position: sticky;
+        inset-block-start: 0;
+        z-index: 2;
+        background: var(--bg-elevated);
+      }
+
+      td:nth-child(2)::before {
+        content: var(--label-2) ": ";
+        color: var(--text-secondary);
+      }
+      td:nth-child(3)::before {
+        content: var(--label-3) ": ";
+        color: var(--text-secondary);
+      }
+      td:nth-child(4)::before {
+        content: var(--label-4) ": ";
+        color: var(--text-secondary);
+      }
+      td:nth-child(5)::before {
+        content: var(--label-5) ": ";
+        color: var(--text-secondary);
+      }
+      td:nth-child(6)::before {
+        content: var(--label-6) ": ";
+        color: var(--text-secondary);
+      }
+    }
+
+    /* Light-Dismiss Dialog (modern-web-guidance: light-dismiss-a-dialog) */
+    dialog#inspectorDialog {
+      margin: auto;
+      inline-size: min(860px, 92vw);
+      max-block-size: 86vh;
+      background: var(--bg-panel);
+      color: var(--text-primary);
+      border: 1px solid var(--accent-blue);
+      border-radius: 0.85rem;
+      padding: 1.25rem;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.75);
+    }
+
+    dialog::backdrop {
+      background-color: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(3px);
+    }
+
+    .dialog-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-block-end: 0.75rem;
+      border-block-end: 1px solid var(--border-subtle);
+      margin-block-end: 0.85rem;
+    }
+
+    .code-box {
+      background: #070a12;
+      border: 1px solid var(--border-subtle);
+      border-radius: 0.55rem;
+      padding: 0.85rem;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      overflow-x: auto;
+      white-space: pre;
+      color: #e2e8f0;
+      max-block-size: 260px;
+      margin-block-end: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-logo">M</div>
+      <div>
+        <div class="brand-title">
+          Mend
+          <span class="agent-tag">Switch AI Room Protocol</span>
+        </div>
+        <div class="brand-sub">Autonomous Incident Forensics, Surgical Patching & Live Telegram Hotfix Room</div>
+      </div>
+    </div>
+
+    <div class="status-pills">
+      <div class="pill" id="roomPill">
+        <span class="dot"></span>
+        <span>Room: <code>room://mend-prod-incidents</code></span>
+      </div>
+      <div class="pill" id="telegramPill">
+        <span class="dot" id="tgDot"></span>
+        <span id="tgStatusText">Telegram: <code>@mend_switch_bot</code></span>
+      </div>
+      <div class="pill" id="serviceStatusPill">
+        <span class="dot warn" id="serviceDot"></span>
+        <span id="serviceStatusText">Checkout API: Checking...</span>
+      </div>
+      <button class="btn" id="openInspectorBtn" type="button">
+        🔍 Inspect AST, Diff & Unittests
+      </button>
+      <button class="btn btn-amber" id="resetBaselineBtn" type="button">
+        🔄 Reset Unpatched Baseline
+      </button>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <!-- Left Panel: Switch AI Multi-Agent Room (Synced 1:1 with Telegram) -->
+    <section class="panel" aria-label="Switch AI Collaborative Room">
+      <div class="panel-header">
+        <div class="panel-title">
+          💬 Switch Room <code>#mend-prod-incidents</code>
+        </div>
+        <div class="agent-roster">
+          <span class="agent-tag">@mend-recon</span>
+          <span class="agent-tag forge">@mend-forge</span>
+          <span class="agent-tag guard">@mend-guard</span>
+        </div>
+      </div>
+
+      <div class="room-feed" id="roomFeed"></div>
+
+      <form class="room-composer" id="chatForm">
+        <input
+          type="text"
+          id="chatInput"
+          placeholder="Message Switch Room & @mend_switch_bot (e.g. 'trigger bug', 'run tests', 'ship it')..."
+          autocomplete="off"
+        />
+        <button type="button" class="btn" id="voiceBtn" title="Voice / Wispr Flow Command">
+          🎙️ Voice
+        </button>
+        <button type="submit" class="btn btn-primary">Send to Room</button>
+      </form>
+    </section>
+
+    <!-- Right Panel: Live Production Checkout Service & Telemetry -->
+    <section class="panel" aria-label="Production Checkout Service and Telemetry">
+      <div class="panel-header">
+        <div class="panel-title">
+          ⚡ Live Production Microservice (<code>services/checkout_engine.py</code>)
+        </div>
+        <span class="agent-tag guard" id="trustScoreBadge">Switch Trust: 99.4%</span>
+      </div>
+
+      <div class="ops-section">
+        <div style="font-size: 0.82rem; color: var(--text-secondary);">
+          Fire real HTTP requests against the SQLite-backed settlement service. Unhandled exceptions automatically page <code>@mend-recon</code>, <code>@mend-forge</code>, and <code>@mend-guard</code> in Telegram & Switch Room:
+        </div>
+        <div class="action-grid">
+          <button type="button" class="btn btn-primary" id="btnNormalTx">
+            💳 Settle Standard Order ($480.00 USD → 200 OK)
+          </button>
+          <button type="button" class="btn btn-danger" id="btnTriggerVoucherBug">
+            💥 Trigger 100% Voucher Bug ($250 Promo → 500 Crash)
+          </button>
+          <button type="button" class="btn btn-danger" id="btnTriggerNgnBug">
+            🌍 Trigger Lagos NGN FX Bug (₦150k NGN → 500 KeyError)
+          </button>
+          <button type="button" class="btn btn-success" id="btnApproveHotfix">
+            🚀 Approve & Hot-Reload Patch (`ship it`)
+          </button>
+        </div>
+
+        <div class="telemetry-cards">
+          <div class="stat-card">
+            <div class="stat-label">Last HTTP Response</div>
+            <div class="stat-value" id="statHttpCode">200 OK</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Unittest Suite (4 Tests)</div>
+            <div class="stat-value" id="statTestSuite">Ready</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Switch Trust Guardrails</div>
+            <div class="stat-value" id="statGuardrail">99.4% PASS</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Diff & Incident Banner -->
+      <div class="ops-section" style="flex: 1; display: flex; flex-direction: column; gap: 0.75rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-secondary);">
+            🛠️ Active Candidate Patch & Guardrail Preview
+          </span>
+          <button type="button" class="btn" id="btnRunTestsNow" style="padding: 0.3rem 0.65rem; font-size: 0.74rem;">
+            🧪 Run `python3 -m unittest`
+          </button>
+        </div>
+        <div class="code-box" id="liveDiffPreview" style="max-block-size: 155px; margin-block-end: 0;">No active incident diff yet. Click "Trigger 100% Voucher Bug" above to trigger a live 500 exception and watch @mend-recon, @mend-forge, and @mend-guard collaborate!</div>
+
+        <!-- Responsive SQLite Ledger Table -->
+        <div tabindex="0" role="region" aria-labelledby="ledger-table-caption" class="table-wrapper">
+          <table>
+            <caption id="ledger-table-caption">Live SQLite Production Settlement Ledger (data/production_ledger.db)</caption>
+            <thead>
+              <tr>
+                <th>TX ID</th>
+                <th>Merchant</th>
+                <th>Currency</th>
+                <th>Gross / Net</th>
+                <th>Fee (bps)</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="ledgerTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- MANDATORY: Use closedby="any" to enable light-dismiss behavior -->
+  <dialog id="inspectorDialog" closedby="any" aria-labelledby="inspectorDialogTitle">
+    <form method="dialog">
+      <div class="dialog-header">
+        <h2 id="inspectorDialogTitle" style="font-size: 1rem;">🔍 Live AST Forensics, Unified Git Diff & Unittest Output</h2>
+        <button type="submit" class="btn">Close (Esc)</button>
+      </div>
+      <div style="font-size: 0.8rem; color: var(--text-secondary); margin-block-end: 0.35rem;">Unified Git Diff (<code>a/services/checkout_engine.py</code> → <code>b/services/checkout_engine.py</code>):</div>
+      <div class="code-box" id="modalDiffBox">No pending diff.</div>
+      <div style="font-size: 0.8rem; color: var(--text-secondary); margin-block-end: 0.35rem;">Real Unittest Runner Output (<code>python3 -m unittest discover -s tests -v</code>):</div>
+      <div class="code-box" id="modalTestBox">Click "Run python3 -m unittest" to inspect live test output.</div>
+    </form>
+  </dialog>
+
+  <script>
+    const inspectorDialog = document.getElementById('inspectorDialog');
+
+    // Fallback for browsers without closedby support (modern-web-guidance: light-dismiss-a-dialog)
+    if (!('closedBy' in HTMLDialogElement.prototype)) {
+      inspectorDialog.addEventListener('click', (event) => {
+        if (event.target !== inspectorDialog) return;
+        const rect = inspectorDialog.getBoundingClientRect();
+        const isDialogContent = (
+          rect.top <= event.clientY &&
+          event.clientY <= rect.top + rect.height &&
+          rect.left <= event.clientX &&
+          event.clientX <= rect.left + rect.width
+        );
+        if (isDialogContent) return;
+        inspectorDialog.close();
+      });
+    }
+
+    document.getElementById('openInspectorBtn').addEventListener('click', () => {
+      inspectorDialog.showModal();
+    });
+
+    let lastMsgCount = 0;
+
+    function formatContent(raw) {
+      const escaped = raw
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+      return escaped.replace(/```(?:python|diff)?\n([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+    }
+
+    async function fetchState() {
+      try {
+        const res = await fetch('/api/state');
+        const state = await res.json();
+
+        // Update Service Status Pill
+        const srvDot = document.getElementById('serviceDot');
+        const srvText = document.getElementById('serviceStatusText');
+        if (state.is_patched) {
+          srvDot.className = 'dot';
+          srvText.innerHTML = 'Checkout API: <code>PATCHED &amp; HEALTHY (200 OK)</code>';
+        } else {
+          srvDot.className = 'dot warn';
+          srvText.innerHTML = 'Checkout API: <code>UNPATCHED BASELINE</code>';
+        }
+
+        // Update Telegram Pill
+        const tgDot = document.getElementById('tgDot');
+        const tgText = document.getElementById('tgStatusText');
+        if (state.telegram && state.telegram.chat_id) {
+          tgDot.className = 'dot';
+          tgText.innerHTML = `Telegram: <code>@${state.telegram.bot_username}</code> (Chat #${state.telegram.chat_id})`;
+        } else if (state.telegram && state.telegram.connected) {
+          tgDot.className = 'dot warn';
+          tgText.innerHTML = `Telegram: <code>@${state.telegram.bot_username}</code> (Send "hi" on TG)`;
+        }
+
+        // Update Diff & Test Reports
+        if (state.pending_diff) {
+          document.getElementById('liveDiffPreview').textContent = state.pending_diff;
+          document.getElementById('modalDiffBox').textContent = state.pending_diff;
+        } else if (state.is_patched) {
+          document.getElementById('liveDiffPreview').textContent =
+            '✅ Patch deployed to services/checkout_engine.py! ZeroDivisionError & KeyError guards active.';
+        }
+
+        if (state.last_test_report && state.last_test_report.after_patch) {
+          const after = state.last_test_report.after_patch;
+          document.getElementById('statTestSuite').textContent =
+            after.passed ? `4/4 PASS (${after.elapsed_ms}ms)` : 'FAILED';
+          document.getElementById('modalTestBox').textContent = after.output || '';
+        }
+
+        // Update Room Messages
+        const feed = document.getElementById('roomFeed');
+        if (state.messages && state.messages.length !== lastMsgCount) {
+          lastMsgCount = state.messages.length;
+          feed.innerHTML = state.messages.map((m) => {
+            const showApprove = m.metadata && m.metadata.requires_approval && !state.is_patched;
+            return `
+              <article class="msg-card ${m.sender_role}">
+                <div class="msg-meta">
+                  <div class="msg-sender">
+                    <span>${m.sender_name}</span>
+                    <span class="msg-handle">${m.sender_id}</span>
+                  </div>
+                  <span class="msg-platform">${m.platform}</span>
+                </div>
+                <div class="msg-body">${formatContent(m.content)}</div>
+                ${showApprove ? `
+                  <div class="approval-bar">
+                    <button type="button" class="btn btn-success" onclick="approvePatch()">
+                      ✅ Approve &amp; Hot-Reload Fix
+                    </button>
+                    <button type="button" class="btn" onclick="document.getElementById('inspectorDialog').showModal()">
+                      🔍 Inspect AST &amp; Diff
+                    </button>
+                  </div>
+                ` : ''}
+              </article>
+            `;
+          }).join('');
+          feed.scrollTop = feed.scrollHeight;
+        }
+
+        // Update SQLite Ledger Table
+        const tbody = document.getElementById('ledgerTableBody');
+        if (state.settlements) {
+          tbody.innerHTML = state.settlements.map((tx) => `
+            <tr>
+              <th>${tx.tx_id}</th>
+              <td>${tx.merchant_id}</td>
+              <td>${tx.currency}</td>
+              <td>${(tx.gross_cents / 100).toFixed(2)} / ${(tx.net_cents / 100).toFixed(2)}</td>
+              <td>${tx.effective_fee_bps.toFixed(2)} bps</td>
+              <td style="color: #10b981; font-weight: 700;">${tx.status}</td>
+            </tr>
+          `).join('');
+        }
+      } catch (err) {
+        console.error('State poll error:', err);
+      }
+    }
+
+    async function settleOrder(payload) {
+      const statHttp = document.getElementById('statHttpCode');
+      statHttp.textContent = 'Running...';
+      const res = await fetch('/api/checkout/settle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        statHttp.textContent = `200 OK (${data.settlement.tx_id})`;
+        statHttp.style.color = '#10b981';
+      } else {
+        statHttp.textContent = `500 ERROR (${data.error.split(':')[0]})`;
+        statHttp.style.color = '#f43f5e';
+      }
+      await fetchState();
+    }
+
+    async function approvePatch() {
+      const statHttp = document.getElementById('statHttpCode');
+      statHttp.textContent = 'Hot-Reloading...';
+      const res = await fetch('/api/room/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ approver: 'Rahmat (Switch Room Console)' }),
+      });
+      const data = await res.json();
+      if (res.ok && data.result && data.result.replayed_tx) {
+        statHttp.textContent = `200 OK (${data.result.replayed_tx.tx_id})`;
+        statHttp.style.color = '#10b981';
+      }
+      await fetchState();
+    }
+
+    document.getElementById('btnNormalTx').addEventListener('click', () => {
+      settleOrder({
+        merchant_id: 'merch_stripe_global',
+        customer_email: 'enterprise@acme.io',
+        currency: 'USD',
+        gross_cents: 48000,
+        discount_cents: 0,
+      });
+    });
+
+    document.getElementById('btnTriggerVoucherBug').addEventListener('click', () => {
+      settleOrder({
+        merchant_id: 'merch_enterprise_promo',
+        customer_email: 'cto@acme-corp.io',
+        currency: 'USD',
+        gross_cents: 25000,
+        discount_cents: 25000,
+      });
+    });
+
+    document.getElementById('btnTriggerNgnBug').addEventListener('click', () => {
+      settleOrder({
+        merchant_id: 'merch_lagos_hub',
+        customer_email: 'rahmat@paystack.ng',
+        currency: 'NGN',
+        gross_cents: 15000000,
+        discount_cents: 0,
+      });
+    });
+
+    document.getElementById('btnApproveHotfix').addEventListener('click', () => {
+      approvePatch();
+    });
+
+    document.getElementById('resetBaselineBtn').addEventListener('click', async () => {
+      await fetch('/api/room/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ actor: 'Lead Engineer' }),
+      });
+      document.getElementById('statHttpCode').textContent = 'UNPATCHED READY';
+      document.getElementById('statHttpCode').style.color = '#f59e0b';
+      await fetchState();
+    });
+
+    document.getElementById('btnRunTestsNow').addEventListener('click', async () => {
+      const res = await fetch('/api/room/test', { method: 'POST', body: '{}' });
+      const data = await res.json();
+      if (data.report) {
+        document.getElementById('modalTestBox').textContent = data.report.output;
+        document.getElementById('statTestSuite').textContent =
+          data.report.passed ? `4/4 PASS (${data.report.elapsed_ms}ms)` : `FAIL (exit=${data.report.exit_code})`;
+      }
+      await fetchState();
+    });
+
+    document.getElementById('chatForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = '';
+      await fetch('/api/room/message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sender: 'Rahmat (Switch Console)',
+          text,
+          platform: 'Switch Console -> Telegram',
+        }),
+      });
+      await fetchState();
+    });
+
+    // Voice / Wispr Flow Command Integration
+    document.getElementById('voiceBtn').addEventListener('click', async () => {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        const rec = new SpeechRecognition();
+        rec.lang = 'en-US';
+        rec.onresult = async (ev) => {
+          const transcript = ev.results[0][0].transcript;
+          document.getElementById('chatInput').value = transcript;
+          await fetch('/api/room/message', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              sender: 'Rahmat (Voice / Wispr Flow)',
+              text: `🎙️ [Voice Command]: ${transcript}`,
+              platform: 'Wispr Voice -> Switch Room',
+            }),
+          });
+          await fetchState();
+        };
+        rec.start();
+      } else {
+        document.getElementById('chatInput').focus();
+      }
+    });
+
+    fetchState();
+    setInterval(fetchState, 1500);
+  </script>
+</body>
+</html>
+

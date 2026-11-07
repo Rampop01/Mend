@@ -1,0 +1,8 @@
+.env
+__pycache__/
+*.pyc
+data/*.db
+*.mp4
+*.wav
+*.aiff
+
