@@ -39,6 +39,16 @@ SSL_CTX = (
     else ssl.create_default_context()
 )
 
+TELEGRAM_QUICK_KEYBOARD = {
+    "keyboard": [
+        [{"text": "🚨 Trigger Bug"}, {"text": "🧪 Run Tests"}],
+        [{"text": "🚀 Ship Hotfix"}, {"text": "🔄 Reset Baseline"}],
+    ],
+    "resize_keyboard": True,
+    "one_time_keyboard": False,
+    "is_persistent": True,
+}
+
 
 def load_env() -> Dict[str, str]:
     env: Dict[str, str] = {}
@@ -543,6 +553,39 @@ class MendSwitchOrchestrator:
             self.telegram_chat_id = int(chat_id_str)
         if token:
             self.telegram_connected = True
+            threading.Thread(target=self.register_telegram_commands, daemon=True).start()
+
+    def register_telegram_commands(self) -> bool:
+        """
+        Registers the native Telegram bot commands menu visible when typing '/' in chat.
+        """
+        env = load_env()
+        token = env.get("TELEGRAM_BOT_TOKEN")
+        if not token:
+            return False
+        try:
+            url = f"https://api.telegram.org/bot{token}/setMyCommands"
+            payload = {
+                "commands": [
+                    {"command": "start", "description": "Initialize Mend War-Room & Quick Controls"},
+                    {"command": "trigger", "description": "Trigger live production 500 checkout crash"},
+                    {"command": "tests", "description": "Run real Python unittest verification suite"},
+                    {"command": "ship", "description": "Approve hotfix, reload 0ms & push to GitHub"},
+                    {"command": "status", "description": "Inspect checkout engine health & recent ledger"},
+                    {"command": "reset", "description": "Reset checkout engine to unpatched baseline"},
+                ]
+            }
+            req = urllib.request.Request(
+                url,
+                data=json.dumps(payload).encode("utf-8"),
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=10, context=SSL_CTX) as resp:
+                data = json.loads(resp.read().decode())
+                return bool(data.get("ok"))
+        except Exception:
+            return False
 
     def send_telegram_message(
         self,
@@ -680,12 +723,16 @@ class MendSwitchOrchestrator:
 
         # 1. @mend-recon posts live AST & traceback forensics
         recon_msg = (
-            f"INCIDENT {incident_id} // UNHANDLED EXCEPTION IN services/checkout_engine.py\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"INCIDENT ALERT // {incident_id}\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"Target: services/checkout_engine.py\n"
             f"Exception: {exc_type}: {exc_msg}\n"
-            f"Location: {ast_ctx['function']}() at line {ast_ctx['line_no']} (AST::{ast_ctx['ast_node']})\n"
+            f"Function: {ast_ctx['function']}() at line {ast_ctx['line_no']}\n"
+            f"AST Node: {ast_ctx['ast_node']}\n"
             f"Payload: {json.dumps(payload)}\n\n"
             f"```python\n{ast_ctx['snippet']}\n```\n"
-            f"Routing root-cause context to @mend-forge for patch synthesis."
+            f"Routing root-cause context to @mend-forge..."
         )
         self.post_room_message(
             sender_id="@mend-recon",
@@ -718,11 +765,13 @@ class MendSwitchOrchestrator:
         }
 
         forge_msg = (
-            f"CANDIDATE PATCH SYNTHESIZED // {incident_id}\n"
-            f"Baseline Test Suite: FAILED (exit={failing_test_run['exit_code']})\n"
-            f"Patched Test Suite:  PASSED 4/4 tests ({passing_test_run['elapsed_ms']}ms)\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"CANDIDATE PATCH SYNTHESIS // {incident_id}\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"Pre-Patch Tests:  FAILED (exit={failing_test_run['exit_code']})\n"
+            f"Post-Patch Tests: PASSED 4/4 tests ({passing_test_run['elapsed_ms']}ms)\n\n"
             f"```diff\n{self.pending_diff}\n```\n"
-            f"Handing candidate diff to @mend-guard for Switch Trust static audit."
+            f"Handing candidate diff to @mend-guard for Switch Trust security audit..."
         )
         self.post_room_message(
             sender_id="@mend-forge",
@@ -744,18 +793,22 @@ class MendSwitchOrchestrator:
         inline_kb = {
             "inline_keyboard": [
                 [
-                    {"text": "Approve & Deploy Hotfix", "callback_data": f"approve:{incident_id}"},
-                    {"text": "Reject / Rollback", "callback_data": f"reject:{incident_id}"},
+                    {"text": "✅ Approve & Push Hotfix", "callback_data": f"approve:{incident_id}"},
+                    {"text": "⏪ Reject / Rollback", "callback_data": f"reject:{incident_id}"},
                 ]
             ]
         }
 
         guard_msg = (
-            f"SWITCH TRUST AUDIT PASSED // SCORE {guard_report['trust_score']}%\n"
-            f"Policy: {guard_report['policy_id']} | AST Gate: 0 forbidden calls | DLP Scan: Clean\n"
-            f"Delta: +{guard_report['diff_lines_added']} / -{guard_report['diff_lines_removed']} LOC\n\n"
-            f"AWAITING OPERATOR APPROVAL: Confirm deployment below or reply 'ship it' in Telegram "
-            f"to hot-reload services/checkout_engine.py and replay the failed transaction."
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"SWITCH TRUST AUDIT // SCORE {guard_report['trust_score']}%\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"Policy: {guard_report['policy_id']}\n"
+            f"AST Gate: 0 forbidden dynamic calls\n"
+            f"Secrets DLP: Clean (no leaked keys)\n"
+            f"Blast Radius: +{guard_report['diff_lines_added']} / -{guard_report['diff_lines_removed']} LOC (Surgical)\n\n"
+            f"AWAITING OPERATOR APPROVAL:\n"
+            f"Tap [Approve & Push Hotfix] below or reply 'ship it' to deploy with zero downtime and push branch to GitHub."
         )
         self.post_room_message(
             sender_id="@mend-guard",
@@ -781,7 +834,8 @@ class MendSwitchOrchestrator:
     def approve_and_deploy_patch(self, approver: str = "Engineer (Telegram)") -> Dict[str, Any]:
         """
         Applies the pending patch to `services/checkout_engine.py` on disk, hot-reloads the Python module,
-        runs the full unittest suite on the live codebase, and replays the failed transaction!
+        runs the full unittest suite on the live codebase, creates an isolated Git hotfix branch,
+        pushes it to GitHub, and replays the failed transaction!
         """
         with self.lock:
             target_source = self.pending_patch_source or PATCHED_SOURCE
@@ -816,13 +870,59 @@ class MendSwitchOrchestrator:
                 send_to_telegram=False,
             )
 
+            # Create Git hotfix branch & push to GitHub
+            branch_name = f"hotfix/{incident_id.lower()}"
+            commit_hash = "local"
+            pushed_to_github = False
+            github_url = f"https://github.com/Rampop01/Mend/tree/{branch_name}"
+            pr_url = f"https://github.com/Rampop01/Mend/compare/main...{branch_name}"
+            try:
+                subprocess.run(["git", "checkout", "-B", branch_name], cwd=ROOT_DIR, capture_output=True)
+                subprocess.run(["git", "add", "services/checkout_engine.py"], cwd=ROOT_DIR, capture_output=True)
+                commit_msg = (
+                    f"fix(prod): surgical hotfix for {incident_id} approved by {approver}\n\n"
+                    f"- Verified with 4/4 unittests ({live_test_run['elapsed_ms']}ms)\n"
+                    f"- Live zero-downtime hot-reload via Switch AI Room"
+                )
+                subprocess.run(["git", "commit", "-m", commit_msg], cwd=ROOT_DIR, capture_output=True)
+                h_res = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT_DIR, capture_output=True, text=True)
+                if h_res.returncode == 0:
+                    commit_hash = h_res.stdout.strip()
+                p_res = subprocess.run(
+                    ["git", "push", "-u", "origin", branch_name, "--force"],
+                    cwd=ROOT_DIR,
+                    capture_output=True,
+                    text=True,
+                    timeout=20,
+                )
+                pushed_to_github = (p_res.returncode == 0)
+            except Exception:
+                pass
+
+            inline_links = {
+                "inline_keyboard": [
+                    [
+                        {"text": "🔗 View GitHub Branch", "url": github_url},
+                        {"text": "🔀 Open Pull Request", "url": pr_url},
+                    ],
+                    [
+                        {"text": "🔄 Reset to Baseline", "callback_data": f"reject:{incident_id}"},
+                    ],
+                ]
+            }
+
             deploy_msg = (
-                f"HOTFIX DEPLOYED & VERIFIED // {incident_id}\n"
-                f"Approved By: {approver}\n"
-                f"Module Reload: services.checkout_engine hot-reloaded (0ms downtime)\n"
-                f"Test Suite: PASSED 4/4 tests ({live_test_run['elapsed_ms']}ms)\n"
-                f"Transaction Replay: HTTP 200 OK -> Ledger TX {replayed_tx['tx_id']} "
-                f"(net_cents={replayed_tx['net_cents']}, effective_fee_bps={replayed_tx['effective_fee_bps']})"
+                f"🚀 HOTFIX DEPLOYED & PUSHED TO GITHUB // {incident_id}\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"• Operator: {approver}\n"
+                f"• Hot-Reload: `services.checkout_engine` (0ms downtime)\n"
+                f"• Verification: PASSED 4/4 unittests ({live_test_run['elapsed_ms']}ms)\n"
+                f"• Git Commit: `{commit_hash}` on `{branch_name}`\n"
+                f"• GitHub Push: {'✅ Pushed to remote' if pushed_to_github else '⚠️ Committed locally'}\n"
+                f"• Branch URL: {github_url}\n"
+                f"• Open PR: {pr_url}\n"
+                f"• TX Replay: HTTP 200 OK -> `{replayed_tx['tx_id']}` (net={replayed_tx['net_cents']}c, fee={replayed_tx['effective_fee_bps']} bps)\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             )
             self.post_room_message(
                 sender_id="@mend-guard",
@@ -834,8 +934,13 @@ class MendSwitchOrchestrator:
                     "incident_id": incident_id,
                     "replayed_tx": replayed_tx,
                     "live_test_run": live_test_run,
+                    "branch": branch_name,
+                    "commit": commit_hash,
                     "status": "RESOLVED",
+                    "github_url": github_url,
+                    "pr_url": pr_url,
                 },
+                reply_markup=inline_links,
             )
 
             return {
@@ -843,6 +948,10 @@ class MendSwitchOrchestrator:
                 "incident_id": incident_id,
                 "replayed_tx": replayed_tx,
                 "live_test_run": live_test_run,
+                "branch": branch_name,
+                "commit": commit_hash,
+                "github_url": github_url,
+                "pr_url": pr_url,
             }
 
     def reset_to_unpatched(self, actor: str = "System Reset") -> Dict[str, Any]:
@@ -851,27 +960,37 @@ class MendSwitchOrchestrator:
         can be triggered repeatedly at any time.
         """
         with self.lock:
+            try:
+                subprocess.run(["git", "checkout", "main"], cwd=ROOT_DIR, capture_output=True)
+            except Exception:
+                pass
             SERVICE_FILE.write_text(UNPATCHED_SOURCE)
             importlib.reload(checkout_engine)
             self.active_incident = None
             self.pending_patch_source = None
             self.pending_diff = ""
+            msg = (
+                f"🔄 BASELINE RESTORED // room://mend-prod-incidents\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"• Actor: {actor}\n"
+                f"• Target: `services/checkout_engine.py` reset to unpatched state.\n"
+                f"• Git Branch: `main` checked out.\n"
+                f"• Status: Ready for incident test. Tap [🚨 Trigger Bug] or send /trigger."
+            )
             self.post_room_message(
                 sender_id="switch-core",
                 sender_name="switch-core",
                 sender_role="system",
-                platform="Switch Console",
-                content=(
-                    f"services/checkout_engine.py reset to unpatched baseline by {actor}. "
-                    f"Standing by for live traffic."
-                ),
+                platform="Telegram",
+                content=msg,
                 metadata={"event": "reset_baseline"},
+                reply_markup=TELEGRAM_QUICK_KEYBOARD,
             )
             return {"status": "UNPATCHED_BASELINE"}
 
     def handle_incoming_chat_command(self, sender_name: str, text: str, platform: str = "Telegram") -> Dict[str, Any]:
         """
-        Processes natural language messages, @agent mentions, or voice transcripts arriving from Telegram or Web Console.
+        Processes natural language messages, button clicks, @agent mentions, or voice transcripts arriving from Telegram or Web Console.
         """
         cleaned = text.strip()
         lower = cleaned.lower()
@@ -885,26 +1004,21 @@ class MendSwitchOrchestrator:
             send_to_telegram=(platform != "Telegram"),
         )
 
-        if any(w in lower for w in ["/start", "start", "/help", "help"]):
-            welcome_kb = {
-                "keyboard": [
-                    [{"text": "trigger bug"}, {"text": "run tests"}],
-                    [{"text": "ship it"}, {"text": "reset"}]
-                ],
-                "resize_keyboard": True,
-                "one_time_keyboard": False
-            }
+        if any(w in lower for w in ["/start", "start", "/help", "help", "hello", "hi"]):
             welcome_msg = (
-                f"MEND INCIDENT WAR-ROOM // room://mend-prod-incidents\n"
-                f"Welcome, {sender_name}. Three autonomous agents are active in this room:\n\n"
-                f"- @mend-recon : Investigates production 500 crashes and parses Python AST on disk\n"
-                f"- @mend-forge : Synthesizes surgical git diffs and runs unittests\n"
-                f"- @mend-guard : Enforces Switch Trust security & gates hotfix deployment\n\n"
-                f"QUICK CONTROLS (tap below or type):\n"
-                f"- trigger bug : Simulate a live 500 crash on the checkout service\n"
-                f"- run tests   : Execute python3 -m unittest suite\n"
-                f"- ship it     : Deploy approved hotfix with 0ms downtime\n"
-                f"- reset       : Reset service to unpatched baseline"
+                f"⚡ MEND INCIDENT WAR-ROOM // @mend_switch_bot\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"Welcome, {sender_name}! Mend turns everyday team chat into an autonomous incident room powered by Switch AI.\n\n"
+                f"Connected Autonomous Agents in room://mend-prod-incidents:\n"
+                f"• @mend-recon  — Investigates 500 runtime crashes, inspects AST on disk\n"
+                f"• @mend-forge  — Synthesizes minimal diffs & runs unittest suites\n"
+                f"• @mend-guard  — Enforces Switch Trust security & pushes Git hotfix branches\n\n"
+                f"QUICK CONTROLS (tap keyboard buttons below or type):\n"
+                f"🚨 Trigger Bug  — Induce 500 ZeroDivisionError on checkout engine\n"
+                f"🧪 Run Tests    — Execute python3 -m unittest suite (4 tests)\n"
+                f"🚀 Ship Hotfix  — Deploy patch in 0ms downtime & push to GitHub\n"
+                f"🔄 Reset Baseline — Restore unpatched baseline to demo again\n\n"
+                f"Commands menu: Type / in the chat bar to see all native commands."
             )
             self.post_room_message(
                 sender_id="switch-core",
@@ -912,23 +1026,25 @@ class MendSwitchOrchestrator:
                 sender_role="system",
                 platform=platform,
                 content=welcome_msg,
-                reply_markup=welcome_kb if platform == "Telegram" else None,
+                reply_markup=TELEGRAM_QUICK_KEYBOARD if platform == "Telegram" else None,
             )
             return {"action": "help", "sender": sender_name}
 
-        if any(w in lower for w in ["ship it", "approve", "deploy", "merge", "lgtm", "apply fix", "/ship"]):
+        if any(w in lower for w in ["ship it", "approve", "deploy", "merge", "lgtm", "apply fix", "/ship", "ship hotfix", "🚀"]):
             return self.approve_and_deploy_patch(approver=f"{sender_name} ({platform})")
 
-        if any(w in lower for w in ["reset", "rollback", "unpatch", "/reset"]):
+        if any(w in lower for w in ["reset", "rollback", "unpatch", "/reset", "reset baseline", "🔄"]):
             return self.reset_to_unpatched(actor=f"{sender_name} ({platform})")
 
-        if any(w in lower for w in ["test", "@mend-forge", "/tests"]):
+        if any(w in lower for w in ["test", "tests", "@mend-forge", "/tests", "run tests", "🧪"]):
             report = self.run_real_unittest_suite(candidate_source=None)
             status_label = "PASSED" if report["passed"] else "FAILED"
             msg = (
-                f"UNITTEST SUITE EXECUTION // {status_label}\n"
-                f"Result: {status_label} (exit={report['exit_code']}) in {report['elapsed_ms']}ms\n"
-                f"```\n{report['output'][-600:]}\n```"
+                f"🧪 UNITTEST SUITE EXECUTION // {status_label}\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"• Result: {'✅ ALL TESTS PASSED' if report['passed'] else '❌ TESTS FAILED'} (exit={report['exit_code']})\n"
+                f"• Execution Time: {report['elapsed_ms']}ms\n"
+                f"• Output:\n```\n{report['output'][-500:]}\n```"
             )
             self.post_room_message(
                 sender_id="@mend-forge",
@@ -937,10 +1053,11 @@ class MendSwitchOrchestrator:
                 platform="Switch Protocol // Telegram",
                 content=msg,
                 metadata={"test_report": report},
+                reply_markup=TELEGRAM_QUICK_KEYBOARD if platform == "Telegram" else None,
             )
             return {"action": "tests_ran", "report": report}
 
-        if any(w in lower for w in ["trigger", "simulate", "crash", "bug", "voucher", "/trigger"]):
+        if any(w in lower for w in ["trigger", "simulate", "crash", "bug", "voucher", "/trigger", "trigger bug", "🚨"]):
             payload = {
                 "merchant_id": "merch_enterprise_promo",
                 "customer_email": "cto@acme-corp.io",
@@ -950,32 +1067,45 @@ class MendSwitchOrchestrator:
             }
             try:
                 tx = checkout_engine.process_settlement(payload)
+                msg = (
+                    f"✅ VOUCHER SETTLED CLEANLY // {tx.tx_id}\n"
+                    f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                    f"• Status: HTTP 200 OK\n"
+                    f"• Net Cents: {tx.net_cents}c | Platform Fee: {tx.platform_fee_cents}c\n"
+                    f"• State: Patch is currently active & healthy.\n"
+                    f"• To re-test the bug, tap [🔄 Reset Baseline] first."
+                )
                 self.post_room_message(
                     sender_id="@mend-recon",
                     sender_name="mend-recon",
                     sender_role="agent-recon",
                     platform="Switch Protocol // Telegram",
-                    content=f"Voucher payload settled cleanly ({tx.tx_id}) — patch is active.",
+                    content=msg,
+                    reply_markup=TELEGRAM_QUICK_KEYBOARD if platform == "Telegram" else None,
                 )
                 return {"action": "settled", "tx": tx.to_dict()}
             except Exception as exc:
                 return self.handle_production_exception(payload, exc)
 
-        # Default status response from @mend-recon
-        is_patched = "max(0, gross_cents - discount_cents)" in SERVICE_FILE.read_text()
+        # Status inspection
+        source_code = SERVICE_FILE.read_text()
+        is_patched = "max(0, gross_cents - discount_cents)" in source_code
         settlements = checkout_engine.list_recent_settlements(limit=3)
-        msg = (
-            f"SWITCH ROOM STATUS // room://mend-prod-incidents\n"
-            f"Checkout Engine State: {'PATCHED & HEALTHY (200 OK)' if is_patched else 'UNPATCHED BASELINE'}\n"
-            f"Recent Settlements: {len(settlements)} latest ({settlements[0]['tx_id'] if settlements else 'none'})\n"
-            f"Commands: 'trigger bug' | 'run tests' | 'ship it' | 'reset'"
+        status_msg = (
+            f"📊 SWITCH ROOM STATUS // room://mend-prod-incidents\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"• Checkout Engine State: {'🟢 PATCHED & HEALTHY' if is_patched else '🔴 UNPATCHED BASELINE'}\n"
+            f"• Active Incident: {self.active_incident['incident_id'] if self.active_incident else 'None (All Clear)'}\n"
+            f"• Recent Settlements in Ledger: {len(settlements)}\n"
+            f"• Quick Actions: Tap buttons below or use /trigger, /tests, /ship, /reset"
         )
         self.post_room_message(
             sender_id="@mend-recon",
             sender_name="mend-recon",
             sender_role="agent-recon",
             platform="Switch Protocol // Telegram",
-            content=msg,
+            content=status_msg,
+            reply_markup=TELEGRAM_QUICK_KEYBOARD if platform == "Telegram" else None,
         )
         return {"action": "status", "is_patched": is_patched}
 

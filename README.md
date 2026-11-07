@@ -56,11 +56,18 @@ Instead of isolating AI agents on a developer's machine, Mend deploys **three sp
                  ▼ (Presents inline approval card on mobile)
     ┌───────────────────────────┐
     │  Human Operator           │  Reviews diff on Telegram and taps:
-    │  (Telegram Mobile / Web)  │  [ Approve & Deploy Hotfix ]
+    │  (Telegram Mobile / Web)  │  [ ✅ Approve & Push Hotfix ]
     └────────────┬──────────────┘
                  │
-                 ▼
-  [ Zero-Downtime Hot-Reload & Failed Request Replay -> HTTP 200 OK ]
+                 ├───────────────────────────────┐
+                 ▼                               ▼
+    ┌───────────────────────────┐   ┌───────────────────────────┐
+    │  Zero-Downtime Hot-Reload │   │  Automated Git & GitHub   │
+    │  In-memory module reload  │   │  Creates `hotfix/INC-xxx` │
+    │  Replays failed HTTP req  │   │  Commits verified patch   │
+    │  Settles SQLite ledger    │   │  Pushes branch to GitHub  │
+    └───────────────────────────┘   │  Generates one-click PR   │
+                                    └───────────────────────────┘
 ```
 
 ---
@@ -78,9 +85,26 @@ Instead of isolating AI agents on a developer's machine, Mend deploys **three sp
 ## Key Features
 
 - **Real Execution (Zero Mock Data)**: Every action in Mend operates on real code, real Python AST parsing, real `difflib` unified diffs, real `unittest` runs, and a real SQLite database.
+- **Automated Git Branch & Remote GitHub Push**: Upon human approval, `@mend-guard` creates an isolated Git branch (`hotfix/INC-xxxxx`), commits the verified patch with test metadata, pushes the branch to GitHub, and provides immediate clickable links to review the branch and open a Pull Request.
+- **Native Telegram Bot UI & Quick Controls**: Full ChatOps integration on `@mend_switch_bot` featuring registered native `/` commands and a persistent interactive keyboard (`[🚨 Trigger Bug]`, `[🧪 Run Tests]`, `[🚀 Ship Hotfix]`, `[🔄 Reset Baseline]`) so anyone can operate the incident room from their phone without memorizing commands.
 - **Two-Way Synchronization**: Messages sent in Telegram appear instantly on the web developer console, and console commands stream back to Telegram.
 - **Switch Template Compatibility**: Includes official Switch v1 YAML templates (`templates/mend-incident-warroom.template.yaml` and `templates/mend-hotfix-workroom.template.yaml`) ready to import directly into the **Switch Console** desktop application.
 - **Voice-Enabled (Code with Wispr)**: Supports voice commands (`"trigger bug"`, `"run tests"`, `"ship it"`) via microphone or Wispr Flow.
+
+---
+
+## 📱 Telegram Bot Controls (`@mend_switch_bot`)
+
+When you open **`@mend_switch_bot`**, the bot provides interactive buttons attached directly to your chat bar, plus native slash commands:
+
+| Command / Button | Action | What Happens Under the Hood |
+| :--- | :--- | :--- |
+| **`/start`** | Initialize War-Room | Displays agent roster (`@mend-recon`, `@mend-forge`, `@mend-guard`) and activates the persistent quick-reply keyboard. |
+| **`🚨 Trigger Bug`** (`/trigger`) | Induce 500 Crash | Executes a 100% discount promo voucher against `services/checkout_engine.py`, triggering a real `ZeroDivisionError`. The 3 agents immediately swarm the incident. |
+| **`🧪 Run Tests`** (`/tests`) | Run Regression Suite | Dispatches `@mend-forge` to run `python3 -m unittest discover -s tests -v` in real time, displaying test execution times and assertion outputs. |
+| **`🚀 Ship Hotfix`** (`/ship`) | Deploy & Push | Dispatches `@mend-guard` to hot-reload `checkout_engine.py` in-memory (0ms downtime), commit the patch to a new `hotfix/INC-xxxxx` branch, push it to GitHub, and replay the failed transaction to settle the ledger. |
+| **`📊 /status`** | Health & Ledger | Inspects current checkout engine code state (patched vs baseline), active incident, and recent SQLite transactions. |
+| **`🔄 Reset Baseline`** (`/reset`) | Reset Baseline | Resets `checkout_engine.py` to its unpatched state and checks out `main`, allowing judges and engineers to test the failure flow repeatedly. |
 
 ---
 
@@ -143,15 +167,18 @@ Open **`http://127.0.0.1:8765`** in your browser and open **`@mend_switch_bot`**
 
 ## How to Test the Demo Flow
 
-1. Open **`http://127.0.0.1:8765`** and open your Telegram chat with the bot.
-2. Click **`SETTLE STANDARD ORDER`** on the web dashboard (or send `hello` in Telegram). You will see a normal transaction settle with `HTTP 200 OK`.
-3. Click **`EXECUTE 100% PROMO VOUCHER`** (or send `trigger bug` in Telegram).
-   - The checkout engine will encounter a real `ZeroDivisionError: division by zero` at line 105.
-   - Within 2 seconds, `@mend-recon`, `@mend-forge`, and `@mend-guard` will diagnose the crash, run all tests, and send an approval card to Telegram.
-4. On Telegram, tap **`[Approve & Deploy Hotfix]`** (or reply `ship it`).
-   - The file `services/checkout_engine.py` will be patched on disk.
-   - The module will hot-reload with zero downtime.
-   - The failed voucher transaction will replay and settle with `HTTP 200 OK`.
+1. Open **`http://127.0.0.1:8765`** in your browser and open **`@mend_switch_bot`** on Telegram.
+2. Tap **`🚨 Trigger Bug`** (or send `/trigger` in Telegram or click **`EXECUTE 100% PROMO VOUCHER`** on the web console):
+   - The checkout engine hits a real `ZeroDivisionError: division by zero`.
+   - Within 2 seconds, `@mend-recon` analyzes the stack frame and AST snippet.
+   - `@mend-forge` writes a surgical diff and validates it with passing unittests (`4/4 tests`).
+   - `@mend-guard` runs Switch Trust security policies (99.4% trust score) and presents an inline approval button on your phone.
+3. Tap **`[✅ Approve & Push Hotfix]`** (or reply `ship it` or tap `🚀 Ship Hotfix`):
+   - `services/checkout_engine.py` is hot-reloaded with zero downtime.
+   - A new Git branch `hotfix/INC-xxxxx` is created, committed, and pushed directly to GitHub.
+   - Clickable links appear on Telegram to view the branch and open a GitHub PR in one click.
+   - The failed voucher transaction is replayed automatically and settles to the SQLite ledger with `HTTP 200 OK`.
+4. Tap **`[🔄 Reset to Baseline]`** (or send `/reset`) anytime to reset the codebase and demo it again!
 
 ---
 

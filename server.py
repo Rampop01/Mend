@@ -97,19 +97,8 @@ def telegram_polling_loop() -> None:
                 text = msg.get("text", "")
 
                 if chat_id:
-                    first_link = orchestrator.telegram_chat_id is None
                     orchestrator.telegram_chat_id = int(chat_id)
                     save_env_key("TELEGRAM_CHAT_ID", str(chat_id))
-                    if first_link:
-                        orchestrator.send_telegram_message(
-                            f"MEND SWITCH ROOM LINKED // chat_id={chat_id}\n"
-                            f"Connected to room://mend-prod-incidents with @mend-recon, @mend-forge, and @mend-guard.\n\n"
-                            f"Commands:\n"
-                            f"- trigger bug : Fire a live 500 exception on the checkout service\n"
-                            f"- run tests   : Execute the Python unittest suite\n"
-                            f"- ship it     : Hot-reload the verified patch & replay failed TX",
-                            chat_id=int(chat_id),
-                        )
 
                 if text:
                     orchestrator.handle_incoming_chat_command(
