@@ -117,8 +117,8 @@ mend/
 
 ### 2. Clone & Setup
 ```bash
-git clone https://github.com/<your-username>/mend.git
-cd mend
+git clone https://github.com/Rampop01/Mend.git
+cd Mend
 
 # Copy environment template
 cp .env.example .env
