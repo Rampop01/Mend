@@ -885,13 +885,44 @@ class MendSwitchOrchestrator:
             send_to_telegram=(platform != "Telegram"),
         )
 
-        if any(w in lower for w in ["ship it", "approve", "deploy", "merge", "lgtm", "apply fix"]):
+        if any(w in lower for w in ["/start", "start", "/help", "help"]):
+            welcome_kb = {
+                "keyboard": [
+                    [{"text": "trigger bug"}, {"text": "run tests"}],
+                    [{"text": "ship it"}, {"text": "reset"}]
+                ],
+                "resize_keyboard": True,
+                "one_time_keyboard": False
+            }
+            welcome_msg = (
+                f"MEND INCIDENT WAR-ROOM // room://mend-prod-incidents\n"
+                f"Welcome, {sender_name}. Three autonomous agents are active in this room:\n\n"
+                f"- @mend-recon : Investigates production 500 crashes and parses Python AST on disk\n"
+                f"- @mend-forge : Synthesizes surgical git diffs and runs unittests\n"
+                f"- @mend-guard : Enforces Switch Trust security & gates hotfix deployment\n\n"
+                f"QUICK CONTROLS (tap below or type):\n"
+                f"- trigger bug : Simulate a live 500 crash on the checkout service\n"
+                f"- run tests   : Execute python3 -m unittest suite\n"
+                f"- ship it     : Deploy approved hotfix with 0ms downtime\n"
+                f"- reset       : Reset service to unpatched baseline"
+            )
+            self.post_room_message(
+                sender_id="switch-core",
+                sender_name="switch-core",
+                sender_role="system",
+                platform=platform,
+                content=welcome_msg,
+                reply_markup=welcome_kb if platform == "Telegram" else None,
+            )
+            return {"action": "help", "sender": sender_name}
+
+        if any(w in lower for w in ["ship it", "approve", "deploy", "merge", "lgtm", "apply fix", "/ship"]):
             return self.approve_and_deploy_patch(approver=f"{sender_name} ({platform})")
 
-        if any(w in lower for w in ["reset", "rollback", "unpatch"]):
+        if any(w in lower for w in ["reset", "rollback", "unpatch", "/reset"]):
             return self.reset_to_unpatched(actor=f"{sender_name} ({platform})")
 
-        if "test" in lower or "@mend-forge" in lower:
+        if any(w in lower for w in ["test", "@mend-forge", "/tests"]):
             report = self.run_real_unittest_suite(candidate_source=None)
             status_label = "PASSED" if report["passed"] else "FAILED"
             msg = (
@@ -909,7 +940,7 @@ class MendSwitchOrchestrator:
             )
             return {"action": "tests_ran", "report": report}
 
-        if any(w in lower for w in ["trigger", "simulate", "crash", "bug", "voucher"]):
+        if any(w in lower for w in ["trigger", "simulate", "crash", "bug", "voucher", "/trigger"]):
             payload = {
                 "merchant_id": "merch_enterprise_promo",
                 "customer_email": "cto@acme-corp.io",
