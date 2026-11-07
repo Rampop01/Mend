@@ -102,12 +102,12 @@ def telegram_polling_loop() -> None:
                     save_env_key("TELEGRAM_CHAT_ID", str(chat_id))
                     if first_link:
                         orchestrator.send_telegram_message(
-                            f"🟢 *Mend Switch Room Linked!* (`chat_id={chat_id}`)\n"
-                            f"Connected to `room://mend-prod-incidents` with `@mend-recon`, `@mend-forge`, and `@mend-guard`.\n\n"
-                            f"Try replying:\n"
-                            f"• `trigger bug` — Fire a live 500 exception on the checkout service\n"
-                            f"• `run tests` — Run the real Python unittest suite\n"
-                            f"• `ship it` — Hot-reload the verified patch & replay failed TX",
+                            f"MEND SWITCH ROOM LINKED // chat_id={chat_id}\n"
+                            f"Connected to room://mend-prod-incidents with @mend-recon, @mend-forge, and @mend-guard.\n\n"
+                            f"Commands:\n"
+                            f"- trigger bug : Fire a live 500 exception on the checkout service\n"
+                            f"- run tests   : Execute the Python unittest suite\n"
+                            f"- ship it     : Hot-reload the verified patch & replay failed TX",
                             chat_id=int(chat_id),
                         )
 
@@ -223,12 +223,12 @@ class MendRequestHandler(BaseHTTPRequestHandler):
             report = orchestrator.run_real_unittest_suite(candidate_source=None)
             orchestrator.post_room_message(
                 sender_id="@mend-forge",
-                sender_name="Mend Forge (Patch & Test Agent)",
+                sender_name="mend-forge",
                 sender_role="agent-forge",
-                platform="Switch + Telegram",
+                platform="Switch Protocol // Telegram",
                 content=(
-                    f"🧪 *On-Demand Unittest Suite*: `{'PASSED' if report['passed'] else 'FAILED'} "
-                    f"(exit={report['exit_code']})` in `{report['elapsed_ms']}ms`"
+                    f"ON-DEMAND UNITTEST SUITE: {'PASSED' if report['passed'] else 'FAILED'} "
+                    f"(exit={report['exit_code']}) in {report['elapsed_ms']}ms"
                 ),
                 metadata={"test_report": report},
             )

@@ -3,25 +3,27 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mend — Switch AI Multi-Agent Incident & Hotfix Room</title>
+  <title>Mend — Switch AI Multi-Agent Incident Orchestrator</title>
   <style>
     :root {
-      --bg-primary: #090d16;
-      --bg-panel: #111827;
-      --bg-card: #172033;
-      --bg-elevated: #1e293b;
-      --border-subtle: #26334d;
-      --text-primary: #f8fafc;
-      --text-secondary: #94a3b8;
-      --text-muted: #64748b;
-      --accent-blue: #38bdf8;
-      --accent-indigo: #6366f1;
-      --accent-emerald: #10b981;
-      --accent-amber: #f59e0b;
-      --accent-rose: #f43f5e;
-      --accent-purple: #a855f7;
-      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      --font-mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
+      --bg-base: #000000;
+      --bg-panel: #0a0a0a;
+      --bg-card: #111111;
+      --bg-elevated: #171717;
+      --bg-hover: #222222;
+      --border-base: rgba(255, 255, 255, 0.1);
+      --border-subtle: rgba(255, 255, 255, 0.06);
+      --border-focus: rgba(255, 255, 255, 0.28);
+      --border-highlight: #ffffff;
+      --text-white: #ffffff;
+      --text-primary: #ededed;
+      --text-secondary: #888888;
+      --text-muted: #555555;
+      --status-green: #00ff88;
+      --status-red: #ff3344;
+      --status-amber: #ffaa00;
+      --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', 'Segoe UI', sans-serif;
+      --font-mono: 'SF Mono', 'JetBrains Mono', Menlo, Monaco, Consolas, monospace;
     }
 
     * {
@@ -31,112 +33,175 @@
     }
 
     body {
-      background: var(--bg-primary);
+      background: var(--bg-base);
       color: var(--text-primary);
       font-family: var(--font-sans);
       line-height: 1.5;
       min-block-size: 100vh;
       display: flex;
       flex-direction: column;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* Top Header Bar */
+    /* Top Navigation Bar */
     header.topbar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0.75rem 1.5rem;
-      background: rgba(17, 24, 39, 0.92);
-      border-block-end: 1px solid var(--border-subtle);
-      backdrop-filter: blur(8px);
-      gap: 1rem;
+      padding: 0.85rem 1.75rem;
+      background: #000000;
+      border-block-end: 1px solid var(--border-base);
+      gap: 1.25rem;
       flex-wrap: wrap;
     }
 
     .brand {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 0.9rem;
     }
 
-    .brand-logo {
-      inline-size: 2.25rem;
-      block-size: 2.25rem;
-      border-radius: 0.6rem;
-      background: linear-gradient(135deg, var(--accent-indigo), var(--accent-blue));
+    .brand-mark {
+      inline-size: 1.85rem;
+      block-size: 1.85rem;
+      border-radius: 4px;
+      background: #ffffff;
+      color: #000000;
       display: grid;
       place-items: center;
-      font-weight: 800;
-      font-size: 1.1rem;
-      color: #fff;
-      box-shadow: 0 0 18px rgba(99, 102, 241, 0.45);
+      font-weight: 900;
+      font-size: 0.95rem;
+      letter-spacing: -0.04em;
+    }
+
+    .brand-meta {
+      display: flex;
+      flex-direction: column;
     }
 
     .brand-title {
       font-weight: 700;
-      font-size: 1.15rem;
+      font-size: 0.98rem;
       letter-spacing: -0.02em;
+      color: var(--text-white);
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.6rem;
     }
 
     .brand-sub {
-      font-size: 0.76rem;
+      font-size: 0.74rem;
       color: var(--text-secondary);
+      font-family: var(--font-mono);
+      letter-spacing: 0.02em;
     }
 
-    .status-pills {
+    .status-group {
       display: flex;
       align-items: center;
-      gap: 0.65rem;
+      gap: 0.6rem;
       flex-wrap: wrap;
     }
 
-    .pill {
+    .tag {
       display: inline-flex;
       align-items: center;
       gap: 0.45rem;
       padding: 0.35rem 0.75rem;
-      border-radius: 999px;
-      font-size: 0.78rem;
+      border-radius: 4px;
+      font-size: 0.74rem;
       font-weight: 600;
       background: var(--bg-card);
-      border: 1px solid var(--border-subtle);
+      border: 1px solid var(--border-base);
       color: var(--text-primary);
+      font-family: var(--font-mono);
     }
 
-    .dot {
-      inline-size: 0.5rem;
-      block-size: 0.5rem;
+    .tag-white {
+      background: #ffffff;
+      color: #000000;
+      border-color: #ffffff;
+    }
+
+    .indicator {
+      inline-size: 6px;
+      block-size: 6px;
       border-radius: 50%;
-      background: var(--accent-emerald);
-      box-shadow: 0 0 8px var(--accent-emerald);
+      background: var(--status-green);
+      box-shadow: 0 0 6px var(--status-green);
     }
 
-    .dot.warn {
-      background: var(--accent-amber);
-      box-shadow: 0 0 8px var(--accent-amber);
+    .indicator.amber {
+      background: var(--status-amber);
+      box-shadow: 0 0 6px var(--status-amber);
     }
 
-    .dot.danger {
-      background: var(--accent-rose);
-      box-shadow: 0 0 8px var(--accent-rose);
+    .indicator.red {
+      background: var(--status-red);
+      box-shadow: 0 0 6px var(--status-red);
+    }
+
+    /* Buttons */
+    button.btn {
+      cursor: pointer;
+      border: 1px solid var(--border-base);
+      background: var(--bg-card);
+      color: var(--text-primary);
+      padding: 0.48rem 0.85rem;
+      border-radius: 4px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      letter-spacing: 0.02em;
+      transition: all 0.12s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    button.btn:hover {
+      background: var(--bg-elevated);
+      border-color: var(--border-focus);
+      color: #ffffff;
+    }
+
+    button.btn-primary {
+      background: #ffffff;
+      color: #000000;
+      border-color: #ffffff;
+    }
+
+    button.btn-primary:hover {
+      background: #e0e0e0;
+      border-color: #e0e0e0;
+      color: #000000;
+    }
+
+    button.btn-danger {
+      background: rgba(255, 51, 68, 0.08);
+      border-color: rgba(255, 51, 68, 0.4);
+      color: #ff6677;
+    }
+
+    button.btn-danger:hover {
+      background: rgba(255, 51, 68, 0.16);
+      border-color: var(--status-red);
+      color: #ffffff;
     }
 
     /* Main Split Grid */
     main.workspace {
       display: grid;
-      grid-template-columns: 1.08fr 1.12fr;
-      gap: 1rem;
-      padding: 1rem 1.5rem;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      padding: 1.25rem 1.75rem;
       flex: 1;
-      max-inline-size: 1680px;
+      max-inline-size: 1720px;
       inline-size: 100%;
       margin: 0 auto;
     }
 
-    @media (max-width: 1100px) {
+    @media (max-width: 1080px) {
       main.workspace {
         grid-template-columns: 1fr;
       }
@@ -144,8 +209,8 @@
 
     .panel {
       background: var(--bg-panel);
-      border: 1px solid var(--border-subtle);
-      border-radius: 0.85rem;
+      border: 1px solid var(--border-base);
+      border-radius: 6px;
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -153,84 +218,82 @@
 
     .panel-header {
       padding: 0.85rem 1.15rem;
-      border-block-end: 1px solid var(--border-subtle);
+      border-block-end: 1px solid var(--border-base);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: rgba(23, 32, 51, 0.6);
-      gap: 0.5rem;
+      background: #000000;
+      gap: 0.75rem;
     }
 
     .panel-title {
-      font-size: 0.92rem;
+      font-size: 0.82rem;
       font-weight: 700;
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-white);
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.6rem;
     }
 
     .agent-roster {
       display: flex;
-      gap: 0.4rem;
+      gap: 0.35rem;
       flex-wrap: wrap;
     }
 
-    .agent-tag {
-      font-size: 0.7rem;
+    .agent-chip {
+      font-size: 0.68rem;
       font-family: var(--font-mono);
-      padding: 0.2rem 0.5rem;
-      border-radius: 0.35rem;
-      background: rgba(56, 189, 248, 0.12);
-      color: var(--accent-blue);
-      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 0.18rem 0.5rem;
+      border-radius: 3px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-base);
+      color: var(--text-secondary);
     }
 
-    .agent-tag.forge {
-      background: rgba(168, 85, 247, 0.12);
-      color: #c084fc;
-      border-color: rgba(168, 85, 247, 0.3);
-    }
-
-    .agent-tag.guard {
-      background: rgba(16, 185, 129, 0.12);
-      color: #34d399;
-      border-color: rgba(16, 185, 129, 0.3);
+    .agent-chip.active {
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.4);
     }
 
     /* Switch Room Feed */
     .room-feed {
       padding: 1rem;
       overflow-y: auto;
-      max-block-size: 540px;
+      max-block-size: 550px;
       min-block-size: 420px;
       display: flex;
       flex-direction: column;
-      gap: 0.85rem;
+      gap: 0.75rem;
+      background: var(--bg-panel);
     }
 
     .msg-card {
       background: var(--bg-card);
       border: 1px solid var(--border-subtle);
-      border-radius: 0.75rem;
+      border-radius: 4px;
       padding: 0.85rem 1rem;
-      border-inline-start: 4px solid var(--accent-blue);
+      border-inline-start: 3px solid #ffffff;
     }
 
     .msg-card.agent-recon {
-      border-inline-start-color: var(--accent-rose);
+      border-inline-start-color: var(--status-red);
     }
 
     .msg-card.agent-forge {
-      border-inline-start-color: var(--accent-purple);
+      border-inline-start-color: #888888;
     }
 
     .msg-card.agent-guard {
-      border-inline-start-color: var(--accent-emerald);
+      border-inline-start-color: var(--status-green);
     }
 
     .msg-card.human {
-      border-inline-start-color: var(--accent-amber);
-      background: rgba(30, 41, 59, 0.9);
+      border-inline-start-color: #ffffff;
+      background: #141414;
     }
 
     .msg-meta {
@@ -238,20 +301,21 @@
       align-items: center;
       justify-content: space-between;
       margin-block-end: 0.45rem;
-      font-size: 0.76rem;
+      font-size: 0.74rem;
+      font-family: var(--font-mono);
     }
 
     .msg-sender {
       font-weight: 700;
+      color: var(--text-white);
       display: flex;
       align-items: center;
-      gap: 0.45rem;
+      gap: 0.5rem;
     }
 
     .msg-handle {
-      font-family: var(--font-mono);
-      color: var(--accent-blue);
-      font-size: 0.72rem;
+      color: var(--text-secondary);
+      font-weight: 400;
     }
 
     .msg-platform {
@@ -260,39 +324,37 @@
     }
 
     .msg-body {
-      font-size: 0.84rem;
-      color: #e2e8f0;
+      font-size: 0.82rem;
+      color: #d1d1d1;
       white-space: pre-wrap;
       word-break: break-word;
-    }
-
-    .msg-body code, .msg-body pre {
       font-family: var(--font-mono);
-      font-size: 0.77rem;
+      line-height: 1.6;
     }
 
     .msg-body pre {
-      background: #090d16;
-      border: 1px solid var(--border-subtle);
-      border-radius: 0.5rem;
-      padding: 0.65rem;
+      background: #000000;
+      border: 1px solid var(--border-base);
+      border-radius: 4px;
+      padding: 0.65rem 0.85rem;
       margin-block: 0.5rem;
       overflow-x: auto;
-      color: #cbd5e1;
+      color: #ededed;
+      font-size: 0.78rem;
     }
 
-    .approval-bar {
+    .approval-row {
       display: flex;
-      gap: 0.55rem;
+      gap: 0.5rem;
       margin-block-start: 0.75rem;
       flex-wrap: wrap;
     }
 
-    /* Room Composer + Wispr Voice Input */
+    /* Room Composer */
     .room-composer {
-      padding: 0.85rem 1rem;
-      border-block-start: 1px solid var(--border-subtle);
-      background: var(--bg-card);
+      padding: 0.75rem 1rem;
+      border-block-start: 1px solid var(--border-base);
+      background: #000000;
       display: flex;
       gap: 0.5rem;
       align-items: center;
@@ -300,116 +362,93 @@
 
     .room-composer input {
       flex: 1;
-      background: var(--bg-primary);
-      border: 1px solid var(--border-subtle);
-      color: var(--text-primary);
-      padding: 0.6rem 0.85rem;
-      border-radius: 0.55rem;
-      font-size: 0.85rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-base);
+      color: var(--text-white);
+      padding: 0.55rem 0.85rem;
+      border-radius: 4px;
+      font-size: 0.82rem;
+      font-family: var(--font-mono);
     }
 
-    /* Buttons */
-    button.btn {
-      cursor: pointer;
-      border: 1px solid var(--border-subtle);
-      background: var(--bg-elevated);
-      color: var(--text-primary);
-      padding: 0.55rem 0.9rem;
-      border-radius: 0.55rem;
-      font-size: 0.8rem;
-      font-weight: 600;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.45rem;
-      transition: all 0.15s ease;
+    .room-composer input:focus {
+      outline: none;
+      border-color: var(--border-highlight);
     }
 
-    button.btn:hover {
-      border-color: var(--accent-blue);
-      transform: translateY(-1px);
-    }
-
-    button.btn-primary {
-      background: linear-gradient(135deg, var(--accent-indigo), #4f46e5);
-      border-color: #6366f1;
-      color: #fff;
-    }
-
-    button.btn-danger {
-      background: rgba(244, 63, 94, 0.16);
-      border-color: rgba(244, 63, 94, 0.5);
-      color: #fda4af;
-    }
-
-    button.btn-success {
-      background: linear-gradient(135deg, #059669, #10b981);
-      border-color: #34d399;
-      color: #fff;
-    }
-
-    button.btn-amber {
-      background: rgba(245, 158, 11, 0.16);
-      border-color: rgba(245, 158, 11, 0.5);
-      color: #fcd34d;
-    }
-
-    /* Right Column Sections */
-    .ops-section {
+    /* Operations & Telemetry */
+    .section-block {
       padding: 1rem 1.15rem;
-      border-block-end: 1px solid var(--border-subtle);
+      border-block-end: 1px solid var(--border-base);
     }
 
     .action-grid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 0.6rem;
-      margin-block-start: 0.65rem;
-    }
-
-    .telemetry-cards {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 0.65rem;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.55rem;
       margin-block-start: 0.75rem;
     }
 
-    .stat-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-subtle);
-      border-radius: 0.65rem;
-      padding: 0.7rem 0.85rem;
+    .telemetry-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.55rem;
+      margin-block-start: 0.75rem;
     }
 
-    .stat-label {
-      font-size: 0.72rem;
+    .telemetry-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 4px;
+      padding: 0.65rem 0.85rem;
+    }
+
+    .telemetry-label {
+      font-size: 0.68rem;
       color: var(--text-secondary);
+      font-family: var(--font-mono);
       text-transform: uppercase;
       letter-spacing: 0.04em;
     }
 
-    .stat-value {
+    .telemetry-value {
       font-size: 1.05rem;
       font-weight: 700;
       margin-block-start: 0.2rem;
       font-family: var(--font-mono);
+      color: var(--text-white);
+    }
+
+    .code-diff-preview {
+      background: #000000;
+      border: 1px solid var(--border-base);
+      border-radius: 4px;
+      padding: 0.75rem;
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      overflow-x: auto;
+      white-space: pre;
+      color: #cccccc;
+      max-block-size: 140px;
     }
 
     /* Responsive Table (modern-web-guidance: responsive-table) */
     .table-wrapper {
       overflow: auto;
       max-inline-size: 100%;
-      max-block-size: min(290px, 50vh);
+      max-block-size: 260px;
       container-type: inline-size;
-      border: 1px solid var(--border-subtle);
-      border-radius: 0.65rem;
-      background: var(--bg-card);
+      border: 1px solid var(--border-base);
+      border-radius: 4px;
+      background: #000000;
     }
 
     table {
       inline-size: 100%;
       border-collapse: separate;
       border-spacing: 0;
-      font-size: 0.8rem;
+      font-size: 0.76rem;
+      font-family: var(--font-mono);
       --label-1: "TX ID";
       --label-2: "Merchant";
       --label-3: "Currency";
@@ -420,43 +459,43 @@
 
     caption {
       text-align: start;
-      padding: 0.65rem 0.9rem;
+      padding: 0.6rem 0.85rem;
       font-weight: 700;
-      font-size: 0.82rem;
+      font-size: 0.74rem;
+      font-family: var(--font-mono);
       color: var(--text-secondary);
-      background: var(--bg-elevated);
-      border-block-end: 1px solid var(--border-subtle);
+      background: #000000;
+      border-block-end: 1px solid var(--border-base);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
 
-    /* Sticky column headers (desktop) */
     thead {
       position: sticky;
       inset-block-start: 0;
       z-index: 1;
-      background: var(--bg-elevated);
+      background: #0a0a0a;
     }
 
     th, td {
-      padding: 0.55rem 0.8rem;
+      padding: 0.5rem 0.75rem;
       text-align: start;
       border-block-end: 1px solid var(--border-subtle);
-      font-family: var(--font-mono);
     }
 
     thead th {
-      font-family: var(--font-sans);
-      font-size: 0.73rem;
+      font-size: 0.7rem;
       text-transform: uppercase;
-      color: var(--text-secondary);
-      background: var(--bg-elevated);
+      color: var(--text-muted);
+      background: #0a0a0a;
+      font-weight: 600;
     }
 
-    /* Sticky row headers (desktop) */
     tbody th {
       position: sticky;
       inset-inline-start: 0;
-      background: var(--bg-card);
-      color: var(--accent-blue);
+      background: #000000;
+      color: #ffffff;
       font-weight: 600;
     }
 
@@ -464,62 +503,42 @@
       table, thead, tbody, tr, th, td {
         display: block;
       }
-
       thead {
-        /* MANDATORY: Hide column header from layout and screen readers. */
         display: none;
       }
-
       tr {
-        margin-block-end: 1rem;
-        border: 1px solid var(--border-subtle);
+        margin-block-end: 0.75rem;
+        border: 1px solid var(--border-base);
       }
-
       tbody th {
         position: sticky;
         inset-block-start: 0;
         z-index: 2;
-        background: var(--bg-elevated);
+        background: #111111;
       }
-
-      td:nth-child(2)::before {
-        content: var(--label-2) ": ";
-        color: var(--text-secondary);
-      }
-      td:nth-child(3)::before {
-        content: var(--label-3) ": ";
-        color: var(--text-secondary);
-      }
-      td:nth-child(4)::before {
-        content: var(--label-4) ": ";
-        color: var(--text-secondary);
-      }
-      td:nth-child(5)::before {
-        content: var(--label-5) ": ";
-        color: var(--text-secondary);
-      }
-      td:nth-child(6)::before {
-        content: var(--label-6) ": ";
-        color: var(--text-secondary);
-      }
+      td:nth-child(2)::before { content: var(--label-2) ": "; color: var(--text-secondary); }
+      td:nth-child(3)::before { content: var(--label-3) ": "; color: var(--text-secondary); }
+      td:nth-child(4)::before { content: var(--label-4) ": "; color: var(--text-secondary); }
+      td:nth-child(5)::before { content: var(--label-5) ": "; color: var(--text-secondary); }
+      td:nth-child(6)::before { content: var(--label-6) ": "; color: var(--text-secondary); }
     }
 
-    /* Light-Dismiss Dialog (modern-web-guidance: light-dismiss-a-dialog) */
+    /* Modal Dialog (modern-web-guidance: light-dismiss-a-dialog) */
     dialog#inspectorDialog {
       margin: auto;
-      inline-size: min(860px, 92vw);
-      max-block-size: 86vh;
-      background: var(--bg-panel);
+      inline-size: min(860px, 94vw);
+      max-block-size: 88vh;
+      background: #0a0a0a;
       color: var(--text-primary);
-      border: 1px solid var(--accent-blue);
-      border-radius: 0.85rem;
+      border: 1px solid var(--border-highlight);
+      border-radius: 6px;
       padding: 1.25rem;
-      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.75);
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.95);
     }
 
     dialog::backdrop {
-      background-color: rgba(0, 0, 0, 0.65);
-      backdrop-filter: blur(3px);
+      background-color: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(4px);
     }
 
     .dialog-header {
@@ -527,21 +546,7 @@
       justify-content: space-between;
       align-items: center;
       padding-block-end: 0.75rem;
-      border-block-end: 1px solid var(--border-subtle);
-      margin-block-end: 0.85rem;
-    }
-
-    .code-box {
-      background: #070a12;
-      border: 1px solid var(--border-subtle);
-      border-radius: 0.55rem;
-      padding: 0.85rem;
-      font-family: var(--font-mono);
-      font-size: 0.78rem;
-      overflow-x: auto;
-      white-space: pre;
-      color: #e2e8f0;
-      max-block-size: 260px;
+      border-block-end: 1px solid var(--border-base);
       margin-block-end: 0.85rem;
     }
   </style>
@@ -549,49 +554,45 @@
 <body>
   <header class="topbar">
     <div class="brand">
-      <div class="brand-logo">M</div>
-      <div>
+      <div class="brand-mark">M</div>
+      <div class="brand-meta">
         <div class="brand-title">
-          Mend
-          <span class="agent-tag">Switch AI Room Protocol</span>
+          MEND
+          <span class="tag">SWITCH PROTOCOL</span>
         </div>
-        <div class="brand-sub">Autonomous Incident Forensics, Surgical Patching & Live Telegram Hotfix Room</div>
+        <div class="brand-sub">AUTONOMOUS MULTI-AGENT INCIDENT RECON &amp; HOTFIX PLATFORM</div>
       </div>
     </div>
 
-    <div class="status-pills">
-      <div class="pill" id="roomPill">
-        <span class="dot"></span>
-        <span>Room: <code>room://mend-prod-incidents</code></span>
+    <div class="status-group">
+      <div class="tag" id="roomPill">
+        <span class="indicator"></span>
+        <span>ROOM: room://mend-prod-incidents</span>
       </div>
-      <div class="pill" id="telegramPill">
-        <span class="dot" id="tgDot"></span>
-        <span id="tgStatusText">Telegram: <code>@mend_switch_bot</code></span>
+      <div class="tag" id="telegramPill">
+        <span class="indicator" id="tgDot"></span>
+        <span id="tgStatusText">TELEGRAM: @mend_switch_bot</span>
       </div>
-      <div class="pill" id="serviceStatusPill">
-        <span class="dot warn" id="serviceDot"></span>
-        <span id="serviceStatusText">Checkout API: Checking...</span>
+      <div class="tag" id="serviceStatusPill">
+        <span class="indicator amber" id="serviceDot"></span>
+        <span id="serviceStatusText">SERVICE: INITIALIZING</span>
       </div>
-      <button class="btn" id="openInspectorBtn" type="button">
-        🔍 Inspect AST, Diff & Unittests
-      </button>
-      <button class="btn btn-amber" id="resetBaselineBtn" type="button">
-        🔄 Reset Unpatched Baseline
-      </button>
+      <button class="btn" id="openInspectorBtn" type="button">INSPECT AST &amp; TESTS</button>
+      <button class="btn" id="resetBaselineBtn" type="button">RESET BASELINE</button>
     </div>
   </header>
 
   <main class="workspace">
-    <!-- Left Panel: Switch AI Multi-Agent Room (Synced 1:1 with Telegram) -->
+    <!-- Left: Switch AI Multi-Agent Room synced 1:1 with Telegram -->
     <section class="panel" aria-label="Switch AI Collaborative Room">
       <div class="panel-header">
         <div class="panel-title">
-          💬 Switch Room <code>#mend-prod-incidents</code>
+          ROOM: #mend-prod-incidents
         </div>
         <div class="agent-roster">
-          <span class="agent-tag">@mend-recon</span>
-          <span class="agent-tag forge">@mend-forge</span>
-          <span class="agent-tag guard">@mend-guard</span>
+          <span class="agent-chip active">@mend-recon</span>
+          <span class="agent-chip active">@mend-forge</span>
+          <span class="agent-chip active">@mend-guard</span>
         </div>
       </div>
 
@@ -601,87 +602,93 @@
         <input
           type="text"
           id="chatInput"
-          placeholder="Message Switch Room & @mend_switch_bot (e.g. 'trigger bug', 'run tests', 'ship it')..."
+          placeholder="Send command to room (e.g. 'trigger bug', 'run tests', 'ship it')..."
           autocomplete="off"
         />
-        <button type="button" class="btn" id="voiceBtn" title="Voice / Wispr Flow Command">
-          🎙️ Voice
+        <button type="button" class="btn" id="voiceBtn" title="Wispr Voice Command">
+          VOICE
         </button>
-        <button type="submit" class="btn btn-primary">Send to Room</button>
+        <button type="submit" class="btn btn-primary">SUBMIT</button>
       </form>
     </section>
 
-    <!-- Right Panel: Live Production Checkout Service & Telemetry -->
-    <section class="panel" aria-label="Production Checkout Service and Telemetry">
+    <!-- Right: Production Service & Telemetry -->
+    <section class="panel" aria-label="Production Telemetry & Service Control">
       <div class="panel-header">
         <div class="panel-title">
-          ⚡ Live Production Microservice (<code>services/checkout_engine.py</code>)
+          TARGET SERVICE: services/checkout_engine.py
         </div>
-        <span class="agent-tag guard" id="trustScoreBadge">Switch Trust: 99.4%</span>
+        <span class="tag tag-white" id="trustScoreBadge">TRUST SCORE: 99.4%</span>
       </div>
 
-      <div class="ops-section">
-        <div style="font-size: 0.82rem; color: var(--text-secondary);">
-          Fire real HTTP requests against the SQLite-backed settlement service. Unhandled exceptions automatically page <code>@mend-recon</code>, <code>@mend-forge</code>, and <code>@mend-guard</code> in Telegram & Switch Room:
+      <div class="section-block">
+        <div style="font-size: 0.76rem; color: var(--text-secondary); font-family: var(--font-mono);">
+          Trigger real HTTP requests against the live engine. Unhandled 500 exceptions page @mend-recon, @mend-forge, and @mend-guard:
         </div>
         <div class="action-grid">
-          <button type="button" class="btn btn-primary" id="btnNormalTx">
-            💳 Settle Standard Order ($480.00 USD → 200 OK)
+          <button type="button" class="btn" id="btnNormalTx">
+            SETTLE STANDARD ORDER (USD 480.00 &rarr; 200 OK)
           </button>
           <button type="button" class="btn btn-danger" id="btnTriggerVoucherBug">
-            💥 Trigger 100% Voucher Bug ($250 Promo → 500 Crash)
+            EXECUTE 100% PROMO VOUCHER (PROVOKES 500 CRASH)
           </button>
           <button type="button" class="btn btn-danger" id="btnTriggerNgnBug">
-            🌍 Trigger Lagos NGN FX Bug (₦150k NGN → 500 KeyError)
+            EXECUTE MULTI-CURRENCY NGN (PROVOKES 500 FX BUG)
           </button>
-          <button type="button" class="btn btn-success" id="btnApproveHotfix">
-            🚀 Approve & Hot-Reload Patch (`ship it`)
+          <button type="button" class="btn btn-primary" id="btnApproveHotfix">
+            CONFIRM &amp; DEPLOY HOTFIX ('SHIP IT')
           </button>
         </div>
 
-        <div class="telemetry-cards">
-          <div class="stat-card">
-            <div class="stat-label">Last HTTP Response</div>
-            <div class="stat-value" id="statHttpCode">200 OK</div>
+        <div class="telemetry-grid">
+          <div class="telemetry-card">
+            <div class="telemetry-label">HTTP STATUS</div>
+            <div class="telemetry-value" id="statHttpCode">200 OK</div>
           </div>
-          <div class="stat-card">
-            <div class="stat-label">Unittest Suite (4 Tests)</div>
-            <div class="stat-value" id="statTestSuite">Ready</div>
+          <div class="telemetry-card">
+            <div class="telemetry-label">UNITTEST SUITE</div>
+            <div class="telemetry-value" id="statTestSuite">READY</div>
           </div>
-          <div class="stat-card">
-            <div class="stat-label">Switch Trust Guardrails</div>
-            <div class="stat-value" id="statGuardrail">99.4% PASS</div>
+          <div class="telemetry-card">
+            <div class="telemetry-label">SWITCH TRUST</div>
+            <div class="telemetry-value" id="statGuardrail">99.4% PASS</div>
           </div>
         </div>
       </div>
 
-      <!-- Live Diff & Incident Banner -->
-      <div class="ops-section" style="flex: 1; display: flex; flex-direction: column; gap: 0.75rem;">
+      <!-- Live Diff & SQLite Audit Table -->
+      <div class="section-block" style="flex: 1; display: flex; flex-direction: column; gap: 0.75rem;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-secondary);">
-            🛠️ Active Candidate Patch & Guardrail Preview
+          <span style="font-size: 0.74rem; font-weight: 700; font-family: var(--font-mono); color: var(--text-secondary); text-transform: uppercase;">
+            ACTIVE CANDIDATE PATCH (UNIFIED DIFF)
           </span>
-          <button type="button" class="btn" id="btnRunTestsNow" style="padding: 0.3rem 0.65rem; font-size: 0.74rem;">
-            🧪 Run `python3 -m unittest`
+          <button type="button" class="btn" id="btnRunTestsNow" style="padding: 0.25rem 0.55rem; font-size: 0.7rem;">
+            EXECUTE UNITTESTS
           </button>
         </div>
-        <div class="code-box" id="liveDiffPreview" style="max-block-size: 155px; margin-block-end: 0;">No active incident diff yet. Click "Trigger 100% Voucher Bug" above to trigger a live 500 exception and watch @mend-recon, @mend-forge, and @mend-guard collaborate!</div>
+        <div class="code-diff-preview" id="liveDiffPreview">No pending diff. Execute promo voucher test to trigger live incident.</div>
 
-        <!-- Responsive SQLite Ledger Table -->
+        <!-- Clean Real-Time Settlement Log -->
         <div tabindex="0" role="region" aria-labelledby="ledger-table-caption" class="table-wrapper">
           <table>
-            <caption id="ledger-table-caption">Live SQLite Production Settlement Ledger (data/production_ledger.db)</caption>
+            <caption id="ledger-table-caption">REAL-TIME PRODUCTION AUDIT LOG (SQLITE: data/production_ledger.db)</caption>
             <thead>
               <tr>
-                <th>TX ID</th>
-                <th>Merchant</th>
-                <th>Currency</th>
-                <th>Gross / Net</th>
-                <th>Fee (bps)</th>
-                <th>Status</th>
+                <th>TRANSACTION ID</th>
+                <th>CLIENT</th>
+                <th>CURRENCY</th>
+                <th>GROSS / NET</th>
+                <th>FEE BPS</th>
+                <th>STATUS</th>
               </tr>
             </thead>
-            <tbody id="ledgerTableBody"></tbody>
+            <tbody id="ledgerTableBody">
+              <tr>
+                <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+                  No transactions recorded yet. Execute a checkout order to log real data.
+                </td>
+              </tr>
+            </tbody>
           </table>
         </div>
       </div>
@@ -692,13 +699,19 @@
   <dialog id="inspectorDialog" closedby="any" aria-labelledby="inspectorDialogTitle">
     <form method="dialog">
       <div class="dialog-header">
-        <h2 id="inspectorDialogTitle" style="font-size: 1rem;">🔍 Live AST Forensics, Unified Git Diff & Unittest Output</h2>
-        <button type="submit" class="btn">Close (Esc)</button>
+        <h2 id="inspectorDialogTitle" style="font-size: 0.88rem; font-family: var(--font-mono); text-transform: uppercase; color: #fff;">
+          INSPECTOR // AST FORENSICS, UNIFIED GIT DIFF &amp; UNITTEST OUTPUT
+        </h2>
+        <button type="submit" class="btn">CLOSE (ESC)</button>
       </div>
-      <div style="font-size: 0.8rem; color: var(--text-secondary); margin-block-end: 0.35rem;">Unified Git Diff (<code>a/services/checkout_engine.py</code> → <code>b/services/checkout_engine.py</code>):</div>
-      <div class="code-box" id="modalDiffBox">No pending diff.</div>
-      <div style="font-size: 0.8rem; color: var(--text-secondary); margin-block-end: 0.35rem;">Real Unittest Runner Output (<code>python3 -m unittest discover -s tests -v</code>):</div>
-      <div class="code-box" id="modalTestBox">Click "Run python3 -m unittest" to inspect live test output.</div>
+      <div style="font-size: 0.72rem; color: var(--text-secondary); font-family: var(--font-mono); margin-block-end: 0.35rem;">
+        UNIFIED GIT DIFF (services/checkout_engine.py):
+      </div>
+      <div class="code-diff-preview" id="modalDiffBox" style="max-block-size: 220px; margin-block-end: 0.85rem;">No pending diff.</div>
+      <div style="font-size: 0.72rem; color: var(--text-secondary); font-family: var(--font-mono); margin-block-end: 0.35rem;">
+        REAL PYTHON UNITTEST DISCOVER RUNNER:
+      </div>
+      <div class="code-diff-preview" id="modalTestBox" style="max-block-size: 200px;">Click 'EXECUTE UNITTESTS' to run tests live.</div>
     </form>
   </dialog>
 
@@ -744,22 +757,22 @@
         const srvDot = document.getElementById('serviceDot');
         const srvText = document.getElementById('serviceStatusText');
         if (state.is_patched) {
-          srvDot.className = 'dot';
-          srvText.innerHTML = 'Checkout API: <code>PATCHED &amp; HEALTHY (200 OK)</code>';
+          srvDot.className = 'indicator';
+          srvText.textContent = 'SERVICE: PATCHED & HEALTHY (200 OK)';
         } else {
-          srvDot.className = 'dot warn';
-          srvText.innerHTML = 'Checkout API: <code>UNPATCHED BASELINE</code>';
+          srvDot.className = 'indicator amber';
+          srvText.textContent = 'SERVICE: UNPATCHED BASELINE';
         }
 
         // Update Telegram Pill
         const tgDot = document.getElementById('tgDot');
         const tgText = document.getElementById('tgStatusText');
         if (state.telegram && state.telegram.chat_id) {
-          tgDot.className = 'dot';
-          tgText.innerHTML = `Telegram: <code>@${state.telegram.bot_username}</code> (Chat #${state.telegram.chat_id})`;
+          tgDot.className = 'indicator';
+          tgText.textContent = `TELEGRAM: @${state.telegram.bot_username} (#${state.telegram.chat_id})`;
         } else if (state.telegram && state.telegram.connected) {
-          tgDot.className = 'dot warn';
-          tgText.innerHTML = `Telegram: <code>@${state.telegram.bot_username}</code> (Send "hi" on TG)`;
+          tgDot.className = 'indicator amber';
+          tgText.textContent = `TELEGRAM: @${state.telegram.bot_username} (ONLINE)`;
         }
 
         // Update Diff & Test Reports
@@ -768,7 +781,7 @@
           document.getElementById('modalDiffBox').textContent = state.pending_diff;
         } else if (state.is_patched) {
           document.getElementById('liveDiffPreview').textContent =
-            '✅ Patch deployed to services/checkout_engine.py! ZeroDivisionError & KeyError guards active.';
+            'Patch deployed to services/checkout_engine.py. Guard active.';
         }
 
         if (state.last_test_report && state.last_test_report.after_patch) {
@@ -788,19 +801,19 @@
               <article class="msg-card ${m.sender_role}">
                 <div class="msg-meta">
                   <div class="msg-sender">
-                    <span>${m.sender_name}</span>
-                    <span class="msg-handle">${m.sender_id}</span>
+                    <span>${m.sender_name.toUpperCase()}</span>
+                    <span class="msg-handle">[${m.sender_id}]</span>
                   </div>
-                  <span class="msg-platform">${m.platform}</span>
+                  <span class="msg-platform">${m.platform.toUpperCase()}</span>
                 </div>
                 <div class="msg-body">${formatContent(m.content)}</div>
                 ${showApprove ? `
-                  <div class="approval-bar">
-                    <button type="button" class="btn btn-success" onclick="approvePatch()">
-                      ✅ Approve &amp; Hot-Reload Fix
+                  <div class="approval-row">
+                    <button type="button" class="btn btn-primary" onclick="approvePatch()">
+                      CONFIRM &amp; DEPLOY HOTFIX
                     </button>
                     <button type="button" class="btn" onclick="document.getElementById('inspectorDialog').showModal()">
-                      🔍 Inspect AST &amp; Diff
+                      INSPECT DIFF
                     </button>
                   </div>
                 ` : ''}
@@ -810,9 +823,9 @@
           feed.scrollTop = feed.scrollHeight;
         }
 
-        // Update SQLite Ledger Table
+        // Update Real SQLite Ledger Table
         const tbody = document.getElementById('ledgerTableBody');
-        if (state.settlements) {
+        if (state.settlements && state.settlements.length > 0) {
           tbody.innerHTML = state.settlements.map((tx) => `
             <tr>
               <th>${tx.tx_id}</th>
@@ -820,7 +833,7 @@
               <td>${tx.currency}</td>
               <td>${(tx.gross_cents / 100).toFixed(2)} / ${(tx.net_cents / 100).toFixed(2)}</td>
               <td>${tx.effective_fee_bps.toFixed(2)} bps</td>
-              <td style="color: #10b981; font-weight: 700;">${tx.status}</td>
+              <td style="color: #ffffff; font-weight: 700;">${tx.status}</td>
             </tr>
           `).join('');
         }
@@ -831,7 +844,7 @@
 
     async function settleOrder(payload) {
       const statHttp = document.getElementById('statHttpCode');
-      statHttp.textContent = 'Running...';
+      statHttp.textContent = 'RUNNING...';
       const res = await fetch('/api/checkout/settle', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -840,34 +853,34 @@
       const data = await res.json();
       if (res.ok) {
         statHttp.textContent = `200 OK (${data.settlement.tx_id})`;
-        statHttp.style.color = '#10b981';
+        statHttp.style.color = '#ffffff';
       } else {
         statHttp.textContent = `500 ERROR (${data.error.split(':')[0]})`;
-        statHttp.style.color = '#f43f5e';
+        statHttp.style.color = 'var(--status-red)';
       }
       await fetchState();
     }
 
     async function approvePatch() {
       const statHttp = document.getElementById('statHttpCode');
-      statHttp.textContent = 'Hot-Reloading...';
+      statHttp.textContent = 'DEPLOYING...';
       const res = await fetch('/api/room/approve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ approver: 'Rahmat (Switch Room Console)' }),
+        body: JSON.stringify({ approver: 'Operator (Web Console)' }),
       });
       const data = await res.json();
       if (res.ok && data.result && data.result.replayed_tx) {
         statHttp.textContent = `200 OK (${data.result.replayed_tx.tx_id})`;
-        statHttp.style.color = '#10b981';
+        statHttp.style.color = '#ffffff';
       }
       await fetchState();
     }
 
     document.getElementById('btnNormalTx').addEventListener('click', () => {
       settleOrder({
-        merchant_id: 'merch_stripe_global',
-        customer_email: 'enterprise@acme.io',
+        merchant_id: 'merch_core_01',
+        customer_email: 'finance@enterprise.io',
         currency: 'USD',
         gross_cents: 48000,
         discount_cents: 0,
@@ -876,8 +889,8 @@
 
     document.getElementById('btnTriggerVoucherBug').addEventListener('click', () => {
       settleOrder({
-        merchant_id: 'merch_enterprise_promo',
-        customer_email: 'cto@acme-corp.io',
+        merchant_id: 'merch_promo_02',
+        customer_email: 'eng@acme.io',
         currency: 'USD',
         gross_cents: 25000,
         discount_cents: 25000,
@@ -887,7 +900,7 @@
     document.getElementById('btnTriggerNgnBug').addEventListener('click', () => {
       settleOrder({
         merchant_id: 'merch_lagos_hub',
-        customer_email: 'rahmat@paystack.ng',
+        customer_email: 'tunde@kuda.ng',
         currency: 'NGN',
         gross_cents: 15000000,
         discount_cents: 0,
@@ -902,10 +915,10 @@
       await fetch('/api/room/reset', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ actor: 'Lead Engineer' }),
+        body: JSON.stringify({ actor: 'Operator' }),
       });
-      document.getElementById('statHttpCode').textContent = 'UNPATCHED READY';
-      document.getElementById('statHttpCode').style.color = '#f59e0b';
+      document.getElementById('statHttpCode').textContent = 'UNPATCHED';
+      document.getElementById('statHttpCode').style.color = 'var(--status-amber)';
       await fetchState();
     });
 
@@ -930,15 +943,15 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          sender: 'Rahmat (Switch Console)',
+          sender: 'Operator (Console)',
           text,
-          platform: 'Switch Console -> Telegram',
+          platform: 'Console -> Telegram',
         }),
       });
       await fetchState();
     });
 
-    // Voice / Wispr Flow Command Integration
+    // Voice Command
     document.getElementById('voiceBtn').addEventListener('click', async () => {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (SpeechRecognition) {
@@ -951,8 +964,8 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              sender: 'Rahmat (Voice / Wispr Flow)',
-              text: `🎙️ [Voice Command]: ${transcript}`,
+              sender: 'Operator (Voice)',
+              text: `[VOICE COMMAND]: ${transcript}`,
               platform: 'Wispr Voice -> Switch Room',
             }),
           });
@@ -969,4 +982,3 @@
   </script>
 </body>
 </html>
-

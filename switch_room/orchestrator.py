@@ -129,25 +129,6 @@ def init_db() -> None:
             )
             """
         )
-        cur = conn.execute("SELECT COUNT(*) FROM ledger_settlements")
-        if cur.fetchone()[0] == 0:
-            now = time.time()
-            seed_rows = [
-                ("tx_9f81a2c0", "merch_stripe_eu", "amelia.chen@acme.io", "USD", 48000, 0, 48000, 1420, 295.83, 480.00, "SETTLED", now - 240),
-                ("tx_7d34b91e", "merch_paystack_ng", "tunde.bakare@kuda.ng", "EUR", 125000, 5000, 120000, 3480, 290.00, 1296.00, "SETTLED", now - 165),
-                ("tx_4c19e08a", "merch_flutter_uk", "priya.nair@monzo.co.uk", "GBP", 89500, 4500, 85000, 2495, 293.53, 1079.50, "SETTLED", now - 82),
-            ]
-            conn.executemany(
-                """
-                INSERT INTO ledger_settlements (
-                    tx_id, merchant_id, customer_email, currency,
-                    gross_cents, discount_cents, net_cents,
-                    platform_fee_cents, effective_fee_bps, usd_equivalent,
-                    status, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                seed_rows,
-            )
         conn.commit()
 
 
@@ -329,25 +310,6 @@ def init_db() -> None:
             )
             """
         )
-        cur = conn.execute("SELECT COUNT(*) FROM ledger_settlements")
-        if cur.fetchone()[0] == 0:
-            now = time.time()
-            seed_rows = [
-                ("tx_9f81a2c0", "merch_stripe_eu", "amelia.chen@acme.io", "USD", 48000, 0, 48000, 1420, 295.83, 480.00, "SETTLED", now - 240),
-                ("tx_7d34b91e", "merch_paystack_ng", "tunde.bakare@kuda.ng", "EUR", 125000, 5000, 120000, 3480, 290.00, 1296.00, "SETTLED", now - 165),
-                ("tx_4c19e08a", "merch_flutter_uk", "priya.nair@monzo.co.uk", "GBP", 89500, 4500, 85000, 2495, 293.53, 1079.50, "SETTLED", now - 82),
-            ]
-            conn.executemany(
-                """
-                INSERT INTO ledger_settlements (
-                    tx_id, merchant_id, customer_email, currency,
-                    gross_cents, discount_cents, net_cents,
-                    platform_fee_cents, effective_fee_bps, usd_equivalent,
-                    status, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                seed_rows,
-            )
         conn.commit()
 
 
@@ -718,18 +680,18 @@ class MendSwitchOrchestrator:
 
         # 1. @mend-recon posts live AST & traceback forensics
         recon_msg = (
-            f"🚨 *Incident `{incident_id}` Detected in `services/checkout_engine.py`*\n"
-            f"• *Exception*: `{exc_type}: {exc_msg}`\n"
-            f"• *Failing Function*: `{ast_ctx['function']}()` at line `{ast_ctx['line_no']}` (`AST:{ast_ctx['ast_node']}`)\n"
-            f"• *Request Payload*: `{json.dumps(payload)}`\n\n"
+            f"INCIDENT {incident_id} // UNHANDLED EXCEPTION IN services/checkout_engine.py\n"
+            f"Exception: {exc_type}: {exc_msg}\n"
+            f"Location: {ast_ctx['function']}() at line {ast_ctx['line_no']} (AST::{ast_ctx['ast_node']})\n"
+            f"Payload: {json.dumps(payload)}\n\n"
             f"```python\n{ast_ctx['snippet']}\n```\n"
-            f"Handing off root-cause context to `@mend-forge` for surgical patch synthesis."
+            f"Routing root-cause context to @mend-forge for patch synthesis."
         )
         self.post_room_message(
             sender_id="@mend-recon",
-            sender_name="Mend Recon (Forensics Agent)",
+            sender_name="mend-recon",
             sender_role="agent-recon",
-            platform="Switch + Telegram",
+            platform="Switch Protocol // Telegram",
             content=recon_msg,
             metadata={"incident_id": incident_id, "ast_context": ast_ctx},
         )
@@ -756,17 +718,17 @@ class MendSwitchOrchestrator:
         }
 
         forge_msg = (
-            f"🛠️ *Candidate Patch Synthesized & Verified (`{incident_id}`)*\n"
-            f"• *Pre-Patch Unittest Suite*: `FAILED (exit={failing_test_run['exit_code']})`\n"
-            f"• *Post-Patch Unittest Suite*: `PASSED 4/4 tests in {passing_test_run['elapsed_ms']}ms`\n\n"
+            f"CANDIDATE PATCH SYNTHESIZED // {incident_id}\n"
+            f"Baseline Test Suite: FAILED (exit={failing_test_run['exit_code']})\n"
+            f"Patched Test Suite:  PASSED 4/4 tests ({passing_test_run['elapsed_ms']}ms)\n\n"
             f"```diff\n{self.pending_diff}\n```\n"
-            f"Passing candidate diff to `@mend-guard` for Switch Trust security audit."
+            f"Handing candidate diff to @mend-guard for Switch Trust static audit."
         )
         self.post_room_message(
             sender_id="@mend-forge",
-            sender_name="Mend Forge (Patch & Test Agent)",
+            sender_name="mend-forge",
             sender_role="agent-forge",
-            platform="Switch + Telegram",
+            platform="Switch Protocol // Telegram",
             content=forge_msg,
             metadata={
                 "incident_id": incident_id,
@@ -782,25 +744,24 @@ class MendSwitchOrchestrator:
         inline_kb = {
             "inline_keyboard": [
                 [
-                    {"text": "✅ Approve & Hot-Reload Fix", "callback_data": f"approve:{incident_id}"},
-                    {"text": "⏪ Reject / Rollback", "callback_data": f"reject:{incident_id}"},
+                    {"text": "Approve & Deploy Hotfix", "callback_data": f"approve:{incident_id}"},
+                    {"text": "Reject / Rollback", "callback_data": f"reject:{incident_id}"},
                 ]
             ]
         }
 
         guard_msg = (
-            f"🛡️ *Switch Trust Guardrail Audit: `PASSED ({guard_report['trust_score']}% Trust Score)`*\n"
-            f"• *Policy*: `{guard_report['policy_id']}`\n"
-            f"• *AST Static Gate*: `0 forbidden calls` | *Secrets DLP*: `Clean`\n"
-            f"• *Blast Radius*: `+{guard_report['diff_lines_added']} / -{guard_report['diff_lines_removed']} lines`\n\n"
-            f"⏸️ *Human-in-the-Loop Gate*: Tap *Approve & Hot-Reload Fix* below (or reply `ship it` in Telegram) "
-            f"to apply the patch to `services/checkout_engine.py` and replay the failed transaction."
+            f"SWITCH TRUST AUDIT PASSED // SCORE {guard_report['trust_score']}%\n"
+            f"Policy: {guard_report['policy_id']} | AST Gate: 0 forbidden calls | DLP Scan: Clean\n"
+            f"Delta: +{guard_report['diff_lines_added']} / -{guard_report['diff_lines_removed']} LOC\n\n"
+            f"AWAITING OPERATOR APPROVAL: Confirm deployment below or reply 'ship it' in Telegram "
+            f"to hot-reload services/checkout_engine.py and replay the failed transaction."
         )
         self.post_room_message(
             sender_id="@mend-guard",
-            sender_name="Mend Guard (Switch Trust Agent)",
+            sender_name="mend-guard",
             sender_role="agent-guard",
-            platform="Switch + Telegram",
+            platform="Switch Protocol // Telegram",
             content=guard_msg,
             metadata={
                 "incident_id": incident_id,
@@ -846,28 +807,28 @@ class MendSwitchOrchestrator:
                 self.active_incident["status"] = "RESOLVED"
 
             self.post_room_message(
-                sender_id="human-operator",
+                sender_id="operator",
                 sender_name=approver,
                 sender_role="human",
-                platform="Telegram -> Switch Room",
-                content=f"✅ Approved hotfix deployment for `{incident_id}` (`ship it`).",
+                platform="Telegram // Switch Room",
+                content=f"Approved hotfix deployment for {incident_id} ('ship it').",
                 metadata={"action": "approve", "incident_id": incident_id},
                 send_to_telegram=False,
             )
 
             deploy_msg = (
-                f"🚀 *Hotfix Deployed & Verified in Production (`{incident_id}`)*\n"
-                f"• *Approved By*: *{approver}*\n"
-                f"• *Live Module Reload*: `services.checkout_engine` hot-reloaded in 0ms downtime\n"
-                f"• *Live Unittest Verification*: `PASSED 4/4 tests ({live_test_run['elapsed_ms']}ms)`\n"
-                f"• *Failed Transaction Replay*: `HTTP 200 OK` -> Ledger TX `{replayed_tx['tx_id']}` "
-                f"(`net_cents={replayed_tx['net_cents']}`, `effective_fee_bps={replayed_tx['effective_fee_bps']}`)"
+                f"HOTFIX DEPLOYED & VERIFIED // {incident_id}\n"
+                f"Approved By: {approver}\n"
+                f"Module Reload: services.checkout_engine hot-reloaded (0ms downtime)\n"
+                f"Test Suite: PASSED 4/4 tests ({live_test_run['elapsed_ms']}ms)\n"
+                f"Transaction Replay: HTTP 200 OK -> Ledger TX {replayed_tx['tx_id']} "
+                f"(net_cents={replayed_tx['net_cents']}, effective_fee_bps={replayed_tx['effective_fee_bps']})"
             )
             self.post_room_message(
                 sender_id="@mend-guard",
-                sender_name="Mend Guard (Switch Trust Agent)",
+                sender_name="mend-guard",
                 sender_role="agent-guard",
-                platform="Switch + Telegram",
+                platform="Switch Protocol // Telegram",
                 content=deploy_msg,
                 metadata={
                     "incident_id": incident_id,
@@ -897,12 +858,12 @@ class MendSwitchOrchestrator:
             self.pending_diff = ""
             self.post_room_message(
                 sender_id="switch-core",
-                sender_name="Switch Room Core",
+                sender_name="switch-core",
                 sender_role="system",
                 platform="Switch Console",
                 content=(
-                    f"🔄 `services/checkout_engine.py` reset to unpatched baseline by *{actor}*. "
-                    f"Ready to trigger live production incident."
+                    f"services/checkout_engine.py reset to unpatched baseline by {actor}. "
+                    f"Standing by for live traffic."
                 ),
                 metadata={"event": "reset_baseline"},
             )
@@ -916,7 +877,7 @@ class MendSwitchOrchestrator:
         lower = cleaned.lower()
 
         self.post_room_message(
-            sender_id="human-operator",
+            sender_id="operator",
             sender_name=sender_name,
             sender_role="human",
             platform=platform,
@@ -932,17 +893,17 @@ class MendSwitchOrchestrator:
 
         if "test" in lower or "@mend-forge" in lower:
             report = self.run_real_unittest_suite(candidate_source=None)
-            status_emoji = "✅" if report["passed"] else "❌"
+            status_label = "PASSED" if report["passed"] else "FAILED"
             msg = (
-                f"{status_emoji} *Live Unittest Suite Execution*\n"
-                f"• *Result*: `{'PASSED' if report['passed'] else 'FAILED'} (exit={report['exit_code']})` in `{report['elapsed_ms']}ms`\n"
+                f"UNITTEST SUITE EXECUTION // {status_label}\n"
+                f"Result: {status_label} (exit={report['exit_code']}) in {report['elapsed_ms']}ms\n"
                 f"```\n{report['output'][-600:]}\n```"
             )
             self.post_room_message(
                 sender_id="@mend-forge",
-                sender_name="Mend Forge (Patch & Test Agent)",
+                sender_name="mend-forge",
                 sender_role="agent-forge",
-                platform="Switch + Telegram",
+                platform="Switch Protocol // Telegram",
                 content=msg,
                 metadata={"test_report": report},
             )
@@ -960,10 +921,10 @@ class MendSwitchOrchestrator:
                 tx = checkout_engine.process_settlement(payload)
                 self.post_room_message(
                     sender_id="@mend-recon",
-                    sender_name="Mend Recon (Forensics Agent)",
+                    sender_name="mend-recon",
                     sender_role="agent-recon",
-                    platform="Switch + Telegram",
-                    content=f"✅ Voucher payload settled cleanly (`{tx.tx_id}`) — patch is already active!",
+                    platform="Switch Protocol // Telegram",
+                    content=f"Voucher payload settled cleanly ({tx.tx_id}) — patch is active.",
                 )
                 return {"action": "settled", "tx": tx.to_dict()}
             except Exception as exc:
@@ -973,16 +934,16 @@ class MendSwitchOrchestrator:
         is_patched = "max(0, gross_cents - discount_cents)" in SERVICE_FILE.read_text()
         settlements = checkout_engine.list_recent_settlements(limit=3)
         msg = (
-            f"📡 *Switch Room Status (`room://mend-prod-incidents`)*\n"
-            f"• *Checkout Engine State*: `{'PATCHED & HEALTHY (200 OK)' if is_patched else 'UNPATCHED BASELINE (Vulnerable to 0-Net Voucher & NGN FX)'}`\n"
-            f"• *Recent Ledger Settlements*: `{len(settlements)}` latest (`{settlements[0]['tx_id'] if settlements else 'none'}`)\n"
-            f"• *Commands*: Type `trigger bug` to fire a real 500 exception, `run tests` to ask `@mend-forge` to run unittest, or `ship it` to deploy pending hotfixes."
+            f"SWITCH ROOM STATUS // room://mend-prod-incidents\n"
+            f"Checkout Engine State: {'PATCHED & HEALTHY (200 OK)' if is_patched else 'UNPATCHED BASELINE'}\n"
+            f"Recent Settlements: {len(settlements)} latest ({settlements[0]['tx_id'] if settlements else 'none'})\n"
+            f"Commands: 'trigger bug' | 'run tests' | 'ship it' | 'reset'"
         )
         self.post_room_message(
             sender_id="@mend-recon",
-            sender_name="Mend Recon (Forensics Agent)",
+            sender_name="mend-recon",
             sender_role="agent-recon",
-            platform="Switch + Telegram",
+            platform="Switch Protocol // Telegram",
             content=msg,
         )
         return {"action": "status", "is_patched": is_patched}
